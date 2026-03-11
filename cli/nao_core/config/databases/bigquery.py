@@ -123,6 +123,7 @@ class BigQueryConfig(DatabaseConfig):
 
         auth_type = ask_select(
             "Authentication method:",
+            
             choices=[
                 "SSO / Application Default Credentials (ADC)",
                 "Service account JSON file path",
