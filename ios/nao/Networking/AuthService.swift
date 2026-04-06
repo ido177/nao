@@ -19,19 +19,21 @@ final class AuthService {
 	}
 
 	func signIn(email: String, password: String) async throws -> Session {
-		return try await api.request(
+		try await api.requestVoid(
 			path: "/api/auth/sign-in/email",
 			method: "POST",
 			body: SignInRequest(email: email, password: password)
 		)
+		return try await getSession()
 	}
 
 	func signUp(email: String, password: String, name: String) async throws -> Session {
-		return try await api.request(
+		try await api.requestVoid(
 			path: "/api/auth/sign-up/email",
 			method: "POST",
 			body: SignUpRequest(email: email, password: password, name: name)
 		)
+		return try await getSession()
 	}
 
 	func getSession() async throws -> Session {

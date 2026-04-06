@@ -11,6 +11,14 @@ import { buildGithubAllowlist, isEmailDomainAllowed } from './utils/utils';
 
 type GoogleConfig = Awaited<ReturnType<typeof orgQueries.getGoogleConfig>>;
 
+function buildTrustedOrigins(): string[] | undefined {
+	if (!env.BETTER_AUTH_URL) {
+		return undefined;
+	}
+	const origins = new Set([env.BETTER_AUTH_URL, 'http://localhost:5005']);
+	return [...origins];
+}
+
 function createAuthInstance(googleConfig: GoogleConfig) {
 	const githubAllowlist = buildGithubAllowlist(env.GITHUB_ALLOWED_USERS);
 
@@ -58,7 +66,7 @@ function createAuthInstance(googleConfig: GoogleConfig) {
 			provider: dbConfig.dialect === Dialect.Postgres ? 'pg' : 'sqlite',
 			schema: dbConfig.schema,
 		}),
-		trustedOrigins: env.BETTER_AUTH_URL ? [env.BETTER_AUTH_URL] : undefined,
+		trustedOrigins: buildTrustedOrigins(),
 		emailAndPassword: {
 			enabled: true,
 			sendResetPassword: async ({ user, url }) => {

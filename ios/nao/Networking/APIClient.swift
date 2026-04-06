@@ -94,6 +94,7 @@ final class APIClient: ObservableObject {
 		var request = URLRequest(url: url)
 		request.httpMethod = method
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.setValue(baseURL, forHTTPHeaderField: "Origin")
 
 		if let body = body {
 			request.httpBody = try JSONEncoder().encode(body)

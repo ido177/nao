@@ -47,79 +47,8 @@ final class ChatDetailViewModel: ObservableObject {
 		)
 		messages.append(userMessage)
 
-		isStreaming = true
-		error = nil
-		currentToolName = nil
-
-		let assistantId = UUID().uuidString
-		let assistantMessage = UIMessage(
-			id: assistantId,
-			role: .assistant,
-			parts: [],
-			createdAt: Date(),
-			source: nil
-		)
-		messages.append(assistantMessage)
-
 		let request = AgentRequest(text: trimmed, chatId: chatId)
-
-		streamTask = Task {
-			do {
-				let parser = try await chatService.sendMessage(request: request)
-				var accumulatedText = ""
-				var accumulatedReasoning = ""
-
-				for await event in parser.events() {
-					guard !Task.isCancelled else { break }
-
-					switch event {
-					case .textDelta(let delta):
-						accumulatedText += delta
-						updateAssistantMessage(
-							id: assistantId,
-							text: accumulatedText,
-							reasoning: accumulatedReasoning
-						)
-
-					case .reasoningDelta(let delta):
-						accumulatedReasoning += delta
-						updateAssistantMessage(
-							id: assistantId,
-							text: accumulatedText,
-							reasoning: accumulatedReasoning
-						)
-
-					case .toolCallStarted(let name, _):
-						currentToolName = name
-
-					case .toolCallCompleted:
-						currentToolName = nil
-
-					case .newChat(let chat):
-						chatId = chat.id
-						onNewChat?(chat)
-
-					case .newUserMessageId(let newId):
-						updateUserMessageId(newId)
-
-					case .chatTitleUpdate(let title):
-						chatTitle = title
-						onTitleUpdate?(title)
-
-					case .finishMessage:
-						break
-
-					case .error(let msg):
-						error = msg
-					}
-				}
-			} catch {
-				self.error = error.localizedDescription
-			}
-
-			isStreaming = false
-			currentToolName = nil
-		}
+		await streamResponse(request: request, handleNewChat: true)
 	}
 
 	func stopStreaming() {
@@ -139,21 +68,24 @@ final class ChatDetailViewModel: ObservableObject {
 		guard let index = messages.firstIndex(where: { $0.id == messageId }) else { return }
 
 		messages = Array(messages.prefix(index))
-		await sendMessageWithEdit(text: newText, editId: messageId)
-	}
 
-	private func sendMessageWithEdit(text: String, editId: String) async {
 		let userMessage = UIMessage(
 			id: UUID().uuidString,
 			role: .user,
-			parts: [.text(text)],
+			parts: [.text(newText)],
 			createdAt: Date(),
 			source: nil
 		)
 		messages.append(userMessage)
 
+		let request = AgentRequest(text: newText, chatId: chatId, messageToEditId: messageId)
+		await streamResponse(request: request, handleNewChat: false)
+	}
+
+	private func streamResponse(request: AgentRequest, handleNewChat: Bool) async {
 		isStreaming = true
 		error = nil
+		currentToolName = nil
 
 		let assistantId = UUID().uuidString
 		let assistantMessage = UIMessage(
@@ -165,13 +97,13 @@ final class ChatDetailViewModel: ObservableObject {
 		)
 		messages.append(assistantMessage)
 
-		let request = AgentRequest(text: text, chatId: chatId, messageToEditId: editId)
-
 		streamTask = Task {
+			var accumulatedText = ""
+			var accumulatedReasoning = ""
+			var toolInvocations: [ToolInvocation] = []
+
 			do {
 				let parser = try await chatService.sendMessage(request: request)
-				var accumulatedText = ""
-				var accumulatedReasoning = ""
 
 				for await event in parser.events() {
 					guard !Task.isCancelled else { break }
@@ -182,7 +114,8 @@ final class ChatDetailViewModel: ObservableObject {
 						updateAssistantMessage(
 							id: assistantId,
 							text: accumulatedText,
-							reasoning: accumulatedReasoning
+							reasoning: accumulatedReasoning,
+							tools: toolInvocations
 						)
 
 					case .reasoningDelta(let delta):
@@ -190,14 +123,43 @@ final class ChatDetailViewModel: ObservableObject {
 						updateAssistantMessage(
 							id: assistantId,
 							text: accumulatedText,
-							reasoning: accumulatedReasoning
+							reasoning: accumulatedReasoning,
+							tools: toolInvocations
 						)
 
-					case .toolCallStarted(let name, _):
+					case .toolCallStarted(let name, let callId):
 						currentToolName = name
+						if !toolInvocations.contains(where: { $0.toolCallId == callId }) {
+							toolInvocations.append(ToolInvocation(
+								toolName: name,
+								toolCallId: callId,
+								state: "partial",
+								args: nil,
+								result: nil
+							))
+						}
+						updateAssistantMessage(
+							id: assistantId,
+							text: accumulatedText,
+							reasoning: accumulatedReasoning,
+							tools: toolInvocations
+						)
 
-					case .toolCallCompleted:
+					case .toolCallCompleted(let callId, _):
 						currentToolName = nil
+						markToolComplete(&toolInvocations, callId: callId)
+						updateAssistantMessage(
+							id: assistantId,
+							text: accumulatedText,
+							reasoning: accumulatedReasoning,
+							tools: toolInvocations
+						)
+
+					case .newChat(let chat):
+						if handleNewChat {
+							chatId = chat.id
+							onNewChat?(chat)
+						}
 
 					case .newUserMessageId(let newId):
 						updateUserMessageId(newId)
@@ -206,7 +168,7 @@ final class ChatDetailViewModel: ObservableObject {
 						chatTitle = title
 						onTitleUpdate?(title)
 
-					case .newChat, .finishMessage:
+					case .finishMessage:
 						break
 
 					case .error(let msg):
@@ -217,17 +179,53 @@ final class ChatDetailViewModel: ObservableObject {
 				self.error = error.localizedDescription
 			}
 
+			markAllToolsComplete(&toolInvocations)
+			updateAssistantMessage(
+				id: assistantId,
+				text: accumulatedText,
+				reasoning: accumulatedReasoning,
+				tools: toolInvocations
+			)
+
 			isStreaming = false
 			currentToolName = nil
 		}
 	}
 
-	private func updateAssistantMessage(id: String, text: String, reasoning: String) {
+	private func markToolComplete(_ tools: inout [ToolInvocation], callId: String) {
+		guard let idx = tools.firstIndex(where: { $0.toolCallId == callId }) else { return }
+		let old = tools[idx]
+		tools[idx] = ToolInvocation(
+			toolName: old.toolName,
+			toolCallId: old.toolCallId,
+			state: "result",
+			args: old.args,
+			result: old.result
+		)
+	}
+
+	private func markAllToolsComplete(_ tools: inout [ToolInvocation]) {
+		for i in tools.indices where tools[i].state != "result" {
+			let old = tools[i]
+			tools[i] = ToolInvocation(
+				toolName: old.toolName,
+				toolCallId: old.toolCallId,
+				state: "result",
+				args: old.args,
+				result: old.result
+			)
+		}
+	}
+
+	private func updateAssistantMessage(id: String, text: String, reasoning: String, tools: [ToolInvocation] = []) {
 		guard let index = messages.firstIndex(where: { $0.id == id }) else { return }
 
 		var parts: [UIMessagePart] = []
 		if !reasoning.isEmpty {
 			parts.append(.reasoning(reasoning))
+		}
+		for tool in tools {
+			parts.append(.toolInvocation(tool))
 		}
 		if !text.isEmpty {
 			parts.append(.text(text))
