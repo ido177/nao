@@ -522,6 +522,19 @@ class BigQueryConfig(DatabaseConfig):
             self._schema_metadata[schema] = _fetch_schema_partition_metadata(conn, self.project_id, schema)
         return self._schema_metadata[schema].get(table_name)
 
+    def get_query_history_sql(self, days: int) -> str | None:
+        region = f"region-{self.location}" if self.location else "region-us"
+        return (
+            f"SELECT query "
+            f"FROM `{self.project_id}`.`{region}`.INFORMATION_SCHEMA.JOBS "
+            f"WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY) "
+            f"AND state = 'DONE' "
+            f"AND error_result IS NULL "
+            f"AND statement_type IN ('SELECT') "
+            f"ORDER BY creation_time DESC "
+            f"LIMIT 10000"
+        )
+
     def check_connection(self) -> tuple[bool, str]:
         """Test connectivity to BigQuery."""
         conn = None

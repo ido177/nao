@@ -1,4 +1,5 @@
 import os
+import warnings
 from unittest.mock import patch
 
 from nao_core.config.base import NaoConfig
@@ -99,18 +100,67 @@ def test_prompt_llm_returns_none_when_skipped(mock_prompt_config, mock_confirm):
     mock_prompt_config.assert_not_called()
 
 
-def test_configure_ai_summary_accessors_does_not_duplicate_existing_accessor():
-    """ai_summary accessor should only appear once."""
-    from nao_core.config.databases.base import DatabaseAccessor
+def test_configure_ai_summary_templates_does_not_duplicate_existing_template():
+    """ai_summary template should only appear once."""
+    from nao_core.config.databases.base import DatabaseTemplate
 
     db = DuckDBConfig(name="test-db", path=":memory:")
-    db.accessors = [DatabaseAccessor.COLUMNS, DatabaseAccessor.AI_SUMMARY]
+    db.templates = [DatabaseTemplate.COLUMNS, DatabaseTemplate.AI_SUMMARY]
     llm = LLMConfig(provider=LLMProvider.OPENAI, api_key="sk-test")
 
-    result = NaoConfig._configure_ai_summary_accessors(
+    result = NaoConfig._configure_ai_summary_templates(
         databases=[db],
         llm=llm,
         enable_ai_summary=True,
     )
 
-    assert result[0].accessors.count(DatabaseAccessor.AI_SUMMARY) == 1
+    assert result[0].templates.count(DatabaseTemplate.AI_SUMMARY) == 1
+
+
+def test_legacy_accessors_key_migrated_to_templates_with_warning():
+    """The legacy 'accessors' YAML key should be accepted as 'templates' and emit a FutureWarning."""
+    from nao_core.config.databases.base import DatabaseTemplate
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        db = DuckDBConfig.model_validate(
+            {"type": "duckdb", "name": "test-db", "path": ":memory:", "accessors": ["columns", "preview"]}
+        )
+
+    assert db.templates == [DatabaseTemplate.COLUMNS, DatabaseTemplate.PREVIEW]
+    deprecation_warnings = [w for w in caught if issubclass(w.category, FutureWarning)]
+    assert len(deprecation_warnings) == 1
+    assert "accessors" in str(deprecation_warnings[0].message)
+    assert "templates" in str(deprecation_warnings[0].message)
+
+
+def test_templates_key_works_without_deprecation_warning():
+    """The 'templates' key should work without emitting any deprecation warning."""
+    from nao_core.config.databases.base import DatabaseTemplate
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        db = DuckDBConfig.model_validate(
+            {"type": "duckdb", "name": "test-db", "path": ":memory:", "templates": ["columns", "preview"]}
+        )
+
+    assert db.templates == [DatabaseTemplate.COLUMNS, DatabaseTemplate.PREVIEW]
+    deprecation_warnings = [w for w in caught if issubclass(w.category, FutureWarning)]
+    assert len(deprecation_warnings) == 0
+
+
+def test_how_to_use_template_variant():
+    """how_to_use can be added to the templates list."""
+    from nao_core.config.databases.base import DatabaseTemplate
+
+    db = DuckDBConfig.model_validate(
+        {
+            "type": "duckdb",
+            "name": "test-db",
+            "path": ":memory:",
+            "templates": ["columns", "how_to_use"],
+            "query_history_days": 14,
+        }
+    )
+    assert DatabaseTemplate.HOW_TO_USE in db.templates
+    assert db.query_history_days == 14

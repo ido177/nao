@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import fnmatch
+import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING, cast
 
 import questionary
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -35,14 +36,18 @@ class DatabaseType(str, Enum):
         return [questionary.Choice(db.value.capitalize(), value=db.value) for db in cls]
 
 
-class DatabaseAccessor(str, Enum):
-    """Available default template accessors for database sync."""
+class DatabaseTemplate(str, Enum):
+    """Available default templates for database sync."""
 
     COLUMNS = "columns"
-    DESCRIPTION = "description"
     PREVIEW = "preview"
     PROFILING = "profiling"
     AI_SUMMARY = "ai_summary"
+    HOW_TO_USE = "how_to_use"
+
+
+# Backward-compatible alias
+DatabaseAccessor = DatabaseTemplate
 
 
 class ProfilingRefreshPolicy(str, Enum):
@@ -68,6 +73,8 @@ class ProfilingConfig(BaseModel):
 class DatabaseConfig(BaseModel, ABC):
     """Base configuration for all database backends."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     type: str  # Narrowed to Literal in each subclass for discriminated union
     name: str = Field(description="A friendly name for this connection")
 
@@ -79,19 +86,40 @@ class DatabaseConfig(BaseModel, ABC):
         default_factory=list,
         description="Glob patterns for schemas/tables to exclude (e.g., 'temp_*.*', '*.backup_*')",
     )
-    accessors: list[DatabaseAccessor] = Field(
+    templates: list[DatabaseTemplate] = Field(
         default_factory=lambda: [
-            DatabaseAccessor.COLUMNS,
-            DatabaseAccessor.DESCRIPTION,
-            DatabaseAccessor.PREVIEW,
-            DatabaseAccessor.PROFILING,
+            DatabaseTemplate.COLUMNS,
+            DatabaseTemplate.HOW_TO_USE,
+            DatabaseTemplate.PREVIEW,
+            DatabaseTemplate.PROFILING,
         ],
         description=(
             "Which default templates to render per table "
-            "(e.g., ['columns', 'description', 'ai_summary']). "
-            "Defaults to ['columns', 'description', 'preview', 'profiling']."
+            "(e.g., ['columns', 'how_to_use', 'ai_summary']). "
+            "Defaults to ['columns', 'how_to_use', 'preview', 'profiling']."
         ),
     )
+    query_history_days: int | None = Field(
+        default=None,
+        description="Number of days to look back for query history (used by how_to_use template).",
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_accessors_to_templates(cls, data: dict) -> dict:
+        """Accept legacy 'accessors' key as an alias for 'templates', and strip removed values."""
+        if isinstance(data, dict) and "accessors" in data and "templates" not in data:
+            warnings.warn(
+                "The 'accessors' config key is deprecated and will be removed in a future version. "
+                "Please rename it to 'templates' in your nao.yaml.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            data["templates"] = data.pop("accessors")
+        if isinstance(data, dict) and "templates" in data:
+            data["templates"] = [t for t in data["templates"] if t != "description"]
+        return data
+
     profiling: ProfilingConfig = Field(
         default_factory=ProfilingConfig,
         description="Profiling refresh policy configuration",
@@ -195,6 +223,15 @@ class DatabaseConfig(BaseModel, ABC):
         from nao_core.config.databases.context import DatabaseContext
 
         return DatabaseContext(conn, schema, table_name)
+
+    def get_query_history_sql(self, days: int) -> str | None:
+        """Return SQL to fetch query history for the last N days.
+
+        The query must return rows with at least a `query_text` column.
+        Override in subclasses that support query history introspection.
+        Returns None if query history is not supported.
+        """
+        return None
 
     def _get_empty_credentials(self) -> list[str]:
         """Get list of empty credential fields that typically cause connection failures."""
