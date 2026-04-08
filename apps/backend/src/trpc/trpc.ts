@@ -4,7 +4,10 @@ import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify'
 import superjson from 'superjson';
 
 import { getAuth } from '../auth';
+import * as orgQueries from '../queries/organization.queries';
 import * as projectQueries from '../queries/project.queries';
+import type { OrgRole } from '../types/organization';
+import { isCloud } from '../utils/deployment-mode';
 import { HandlerError } from '../utils/error';
 import { convertHeaders } from '../utils/utils';
 
@@ -15,22 +18,19 @@ export const createContext = async (opts: CreateFastifyContextOptions) => {
 	const headers = convertHeaders(opts.req.headers);
 	const auth = await getAuth();
 	const session = await auth?.api.getSession({ headers });
+	const projectId = opts.req.headers['x-project-id'] as string | undefined;
 	return {
 		session,
+		projectId,
 	};
 };
 
-/**
- * Initialization of tRPC backend
- * Should be done only once per backend!
- */
 const t = initTRPC.context<Context>().create({
 	transformer: superjson,
 });
 
 export const router = t.router;
 
-// Map HandlerError to tRPC error
 const withHandlerErrors = t.middleware(async ({ next }) => {
 	try {
 		return await next();
@@ -52,8 +52,15 @@ export const protectedProcedure = publicProcedure.use(async ({ ctx, next }) => {
 	return next({ ctx: { user: ctx.session.user } });
 });
 
+async function resolveProject(userId: string, headerProjectId?: string) {
+	if (isCloud() && headerProjectId) {
+		return projectQueries.getProjectForUser(headerProjectId, userId);
+	}
+	return projectQueries.getDefaultProjectForUser(userId);
+}
+
 export const projectProtectedProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-	const project = await projectQueries.getProjectByUserId(ctx.user.id);
+	const project = await resolveProject(ctx.user.id, ctx.projectId);
 	if (!project) {
 		throw new TRPCError({ code: 'BAD_REQUEST', message: 'No project configured' });
 	}
@@ -68,6 +75,34 @@ export const adminProtectedProcedure = projectProtectedProcedure.use(async ({ ct
 	}
 
 	return next({ ctx: { project: ctx.project, userRole: ctx.userRole } });
+});
+
+export const orgProtectedProcedure = protectedProcedure
+	.input((raw: unknown) => {
+		const parsed = raw as Record<string, unknown>;
+		if (typeof parsed?.orgId !== 'string') {
+			throw new TRPCError({ code: 'BAD_REQUEST', message: 'orgId is required' });
+		}
+		return parsed as { orgId: string; [key: string]: unknown };
+	})
+	.use(async ({ ctx, input, next }) => {
+		const orgId = (input as { orgId: string }).orgId;
+		const membership = await orgQueries.getOrgMember(orgId, ctx.user.id);
+		if (!membership) {
+			throw new TRPCError({ code: 'FORBIDDEN', message: 'You are not a member of this organization' });
+		}
+		const org = await orgQueries.getOrganizationById(orgId);
+		if (!org) {
+			throw new TRPCError({ code: 'NOT_FOUND', message: 'Organization not found' });
+		}
+		return next({ ctx: { org, orgRole: membership.role as OrgRole } });
+	});
+
+export const orgAdminProcedure = orgProtectedProcedure.use(async ({ ctx, next }) => {
+	if (ctx.orgRole !== 'admin') {
+		throw new TRPCError({ code: 'FORBIDDEN', message: 'Only org admins can perform this action' });
+	}
+	return next({ ctx });
 });
 
 export function ownedResourceProcedure(

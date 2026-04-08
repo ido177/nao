@@ -6,10 +6,27 @@ import dbConfig, { Dialect } from './db/dbConfig';
 import { env } from './env';
 import * as orgQueries from './queries/organization.queries';
 import { emailService } from './services/email';
+import { isSelfHosted } from './utils/deployment-mode';
 import { buildForgotPasswordEmail } from './utils/email-builders';
 import { buildGithubAllowlist, isEmailDomainAllowed } from './utils/utils';
 
 type GoogleConfig = Awaited<ReturnType<typeof orgQueries.getGoogleConfig>>;
+
+async function onUserCreated(user: { id: string; name: string; email: string }, isSocial: boolean) {
+	if (isSelfHosted()) {
+		await orgQueries.initializeDefaultOrganizationForFirstUser(user.id);
+		if (isSocial) {
+			await orgQueries.addUserToDefaultProjectIfExists(user.id);
+		}
+		return;
+	}
+
+	await orgQueries.acceptPendingInvitationsForUser(user.id, user.email);
+	const memberships = await orgQueries.listUserOrganizations(user.id);
+	if (memberships.length === 0) {
+		await orgQueries.createPersonalOrganization(user.id, user.name);
+	}
+}
 
 function createAuthInstance(googleConfig: GoogleConfig) {
 	const githubAllowlist = buildGithubAllowlist(env.GITHUB_ALLOWED_USERS);
@@ -83,10 +100,7 @@ function createAuthInstance(googleConfig: GoogleConfig) {
 					},
 					async after(user, ctx) {
 						const isSocial = ctx?.params?.id === 'google' || ctx?.params?.id === 'github';
-						await orgQueries.initializeDefaultOrganizationForFirstUser(user.id);
-						if (isSocial) {
-							await orgQueries.addUserToDefaultProjectIfExists(user.id);
-						}
+						await onUserCreated(user, isSocial);
 					},
 				},
 			},

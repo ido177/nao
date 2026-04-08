@@ -4,6 +4,8 @@ import { Link, useNavigate, useMatchRoute, useRouterState } from '@tanstack/reac
 import { ArrowLeftFromLine, ArrowRightToLine, PlusIcon, ArrowLeft, ChevronRight, SearchIcon, X } from 'lucide-react';
 import { ChatList } from './sidebar-chat-list';
 import { ChatListItem } from './sidebar-chat-list-item';
+import { OrgSwitcher } from './org-switcher';
+import { ProjectSwitcher } from './project-switcher';
 import { SharedChatListItem } from './shared-chat-list-item';
 import { SidebarUserMenu } from './sidebar-user-menu';
 import { SidebarSettingsNav } from './sidebar-settings-nav';
@@ -20,6 +22,7 @@ import { useChatListQuery } from '@/queries/use-chat-list-query';
 import { useSidebar } from '@/contexts/sidebar';
 import { useCommandMenuCallback } from '@/contexts/command-menu-callback';
 import { useSectionActivity } from '@/hooks/use-chat-activity';
+import { useIsCloud } from '@/hooks/use-deployment-mode';
 import NaoLogo from '@/components/icons/nao-logo.svg';
 import { trpc } from '@/main';
 
@@ -35,6 +38,7 @@ export function Sidebar() {
 	const { fire: openCommandMenu } = useCommandMenuCallback();
 	const project = useQuery(trpc.project.getCurrent.queryOptions());
 	const isAdmin = project.data?.userRole === 'admin';
+	const isCloud = useIsCloud();
 
 	const locationPath = useRouterState({ select: (s) => s.location.pathname });
 	const isInSettings = matchRoute({ to: '/settings', fuzzy: true });
@@ -193,6 +197,12 @@ export function Sidebar() {
 
 			<div className={cn('mt-auto transition-[padding] duration-300', effectiveIsCollapsed ? 'p-1' : 'p-2')}>
 				{isInSettings && <SidebarCommunity isCollapsed={effectiveIsCollapsed} />}
+				{isCloud && (
+					<div className='flex flex-col gap-0.5 mb-1'>
+						<OrgSwitcher isCollapsed={effectiveIsCollapsed} />
+						<ProjectSwitcher isCollapsed={effectiveIsCollapsed} />
+					</div>
+				)}
 				<SidebarUserMenu isCollapsed={effectiveIsCollapsed} />
 			</div>
 		</div>

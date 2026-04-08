@@ -107,6 +107,16 @@ export const buildCredentialPreviews = (
 	);
 };
 
+export const generateSlug = (name: string): string => {
+	const base = name
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-')
+		.replace(/^-|-$/g, '')
+		.slice(0, 40);
+	const suffix = crypto.randomUUID().slice(0, 6);
+	return `${base}-${suffix}`;
+};
+
 export const formatSize = (bytes: number) => {
 	if (bytes < 1024) {
 		return `${bytes} B`;

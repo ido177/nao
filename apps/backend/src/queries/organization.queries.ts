@@ -1,11 +1,26 @@
+import type { UserRole } from '@nao/shared/types';
 import { and, eq, isNull } from 'drizzle-orm';
 
 import s, { DBOrganization, DBOrgMember, NewOrganization, NewOrgMember } from '../db/abstractSchema';
 import { db } from '../db/db';
 import { env } from '../env';
-import { OrgRole } from '../types/organization';
+import type { OrgRole } from '../types/organization';
+import { isCloud, isSelfHosted } from '../utils/deployment-mode';
+import { generateSlug } from '../utils/utils';
 import * as projectQueries from './project.queries';
 import * as userQueries from './user.queries';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function toOrgRole(role: UserRole): OrgRole {
+	return role === 'viewer' ? 'user' : role;
+}
+
+// ---------------------------------------------------------------------------
+// Core CRUD
+// ---------------------------------------------------------------------------
 
 export const getOrganizationById = async (id: string): Promise<DBOrganization | null> => {
 	const [org] = await db.select().from(s.organization).where(eq(s.organization.id, id)).execute();
@@ -22,6 +37,56 @@ export const createOrganization = async (org: NewOrganization): Promise<DBOrgani
 	return created;
 };
 
+export const updateOrganization = async (
+	orgId: string,
+	values: Partial<Pick<DBOrganization, 'name' | 'slug'>>,
+): Promise<DBOrganization> => {
+	const [updated] = await db
+		.update(s.organization)
+		.set(values)
+		.where(eq(s.organization.id, orgId))
+		.returning()
+		.execute();
+	return updated;
+};
+
+export const listUserOrganizations = async (
+	userId: string,
+): Promise<(DBOrgMember & { organization: DBOrganization })[]> => {
+	return db
+		.select({
+			orgId: s.orgMember.orgId,
+			userId: s.orgMember.userId,
+			role: s.orgMember.role,
+			createdAt: s.orgMember.createdAt,
+			organization: s.organization,
+		})
+		.from(s.orgMember)
+		.innerJoin(s.organization, eq(s.orgMember.orgId, s.organization.id))
+		.where(eq(s.orgMember.userId, userId))
+		.execute();
+};
+
+export const listOrgMembers = async (
+	orgId: string,
+): Promise<{ userId: string; role: OrgRole; name: string; email: string }[]> => {
+	return db
+		.select({
+			userId: s.orgMember.userId,
+			role: s.orgMember.role,
+			name: s.user.name,
+			email: s.user.email,
+		})
+		.from(s.orgMember)
+		.innerJoin(s.user, eq(s.orgMember.userId, s.user.id))
+		.where(eq(s.orgMember.orgId, orgId))
+		.execute();
+};
+
+// ---------------------------------------------------------------------------
+// Org members
+// ---------------------------------------------------------------------------
+
 export const getOrgMember = async (orgId: string, userId: string): Promise<DBOrgMember | null> => {
 	const [member] = await db
 		.select()
@@ -36,22 +101,25 @@ export const addOrgMember = async (member: NewOrgMember): Promise<DBOrgMember> =
 	return created;
 };
 
+export const removeOrgMember = async (orgId: string, userId: string): Promise<void> => {
+	await db
+		.delete(s.orgMember)
+		.where(and(eq(s.orgMember.orgId, orgId), eq(s.orgMember.userId, userId)))
+		.execute();
+};
+
+export const updateOrgMemberRole = async (orgId: string, userId: string, role: OrgRole): Promise<void> => {
+	await db
+		.update(s.orgMember)
+		.set({ role })
+		.where(and(eq(s.orgMember.orgId, orgId), eq(s.orgMember.userId, userId)))
+		.execute();
+};
+
 export const getUserOrgMembership = async (
 	userId: string,
 ): Promise<(DBOrgMember & { organization: DBOrganization }) | null> => {
-	const [result] = await db
-		.select({
-			orgId: s.orgMember.orgId,
-			userId: s.orgMember.userId,
-			role: s.orgMember.role,
-			createdAt: s.orgMember.createdAt,
-			organization: s.organization,
-		})
-		.from(s.orgMember)
-		.innerJoin(s.organization, eq(s.orgMember.orgId, s.organization.id))
-		.where(eq(s.orgMember.userId, userId))
-		.limit(1)
-		.execute();
+	const [result] = await listUserOrganizations(userId);
 	return result ?? null;
 };
 
@@ -59,6 +127,10 @@ export const getUserRoleInOrg = async (orgId: string, userId: string): Promise<O
 	const member = await getOrgMember(orgId, userId);
 	return member?.role ?? null;
 };
+
+// ---------------------------------------------------------------------------
+// Google SSO config
+// ---------------------------------------------------------------------------
 
 export const updateGoogleSettings = async (
 	orgId: string,
@@ -87,6 +159,20 @@ export const getGoogleConfig = async () => {
 	};
 };
 
+export const getGoogleConfigForOrg = async (orgId: string) => {
+	const org = await getOrganizationById(orgId);
+	return {
+		clientId: org?.googleClientId || env.GOOGLE_CLIENT_ID || '',
+		clientSecret: org?.googleClientSecret || env.GOOGLE_CLIENT_SECRET || '',
+		authDomains: org?.googleAuthDomains || env.GOOGLE_AUTH_DOMAINS || '',
+		usingDbOverride: !!(org?.googleClientId && org?.googleClientSecret),
+	};
+};
+
+// ---------------------------------------------------------------------------
+// Default / personal org helpers
+// ---------------------------------------------------------------------------
+
 export const getOrCreateDefaultOrganization = async (): Promise<DBOrganization> => {
 	const existing = await getFirstOrganization();
 	if (existing) {
@@ -99,12 +185,24 @@ export const getOrCreateDefaultOrganization = async (): Promise<DBOrganization> 
 	});
 };
 
-/**
- * Initialize default organization and project for the first user.
- * Creates the organization, adds the user as admin, and creates the default project.
- * All operations are wrapped in a transaction.
- */
+export const createPersonalOrganization = async (userId: string, userName: string): Promise<DBOrganization> => {
+	const org = await createOrganization({
+		name: `${userName}'s Organization`,
+		slug: generateSlug(userName),
+	});
+	await addOrgMember({ orgId: org.id, userId, role: 'admin' });
+	return org;
+};
+
+// ---------------------------------------------------------------------------
+// Self-hosted bootstrap (first user + startup)
+// ---------------------------------------------------------------------------
+
 export const initializeDefaultOrganizationForFirstUser = async (userId: string): Promise<void> => {
+	if (isCloud()) {
+		return;
+	}
+
 	const userCount = await userQueries.countAll();
 	if (userCount !== 1) {
 		return;
@@ -116,17 +214,14 @@ export const initializeDefaultOrganizationForFirstUser = async (userId: string):
 	}
 
 	await db.transaction(async (tx) => {
-		// Create organization
 		const [org] = await tx
 			.insert(s.organization)
 			.values({ name: 'Default Organization', slug: 'default' })
 			.returning()
 			.execute();
 
-		// Add user as org admin
 		await tx.insert(s.orgMember).values({ orgId: org.id, userId, role: 'admin' }).execute();
 
-		// Create default project if path is configured
 		const projectPath = process.env.NAO_DEFAULT_PROJECT_PATH;
 		if (projectPath) {
 			const [existingProject] = await tx
@@ -149,12 +244,11 @@ export const initializeDefaultOrganizationForFirstUser = async (userId: string):
 	});
 };
 
-/**
- * Add a user to the default organization and project if they don't already exist.
- * Called when a new user signs up.
- * Idempotent: safe to call multiple times for the same user.
- */
 export const addUserToDefaultProjectIfExists = async (userId: string): Promise<void> => {
+	if (isCloud()) {
+		return;
+	}
+
 	const org = await getFirstOrganization();
 	if (!org) {
 		return;
@@ -184,58 +278,81 @@ export const addUserToDefaultProjectIfExists = async (userId: string): Promise<v
 	});
 };
 
-/**
- * Startup check: Ensures organization structure is valid.
- * - If there are users but no organization, creates one and assigns first user as org_admin
- * - If there are projects without an org, assigns them to the default org
- * - If NAO_DEFAULT_PROJECT_PATH is set, ensures a project exists for that path
- */
+// ---------------------------------------------------------------------------
+// Cloud-mode: accept pending invitations on signup
+// ---------------------------------------------------------------------------
+
+export const acceptPendingInvitationsForUser = async (userId: string, email: string): Promise<void> => {
+	const pendingInvitations = await db
+		.select()
+		.from(s.invitation)
+		.where(and(eq(s.invitation.email, email.toLowerCase()), eq(s.invitation.status, 'pending')))
+		.execute();
+
+	for (const inv of pendingInvitations) {
+		await db.transaction(async (tx) => {
+			const existingOrgMember = await tx.query.orgMember.findFirst({
+				where: and(eq(s.orgMember.orgId, inv.orgId), eq(s.orgMember.userId, userId)),
+			});
+			if (!existingOrgMember) {
+				await tx
+					.insert(s.orgMember)
+					.values({ orgId: inv.orgId, userId, role: toOrgRole(inv.role) })
+					.execute();
+			}
+
+			if (inv.projectId) {
+				const existingProjectMember = await tx.query.projectMember.findFirst({
+					where: and(eq(s.projectMember.projectId, inv.projectId), eq(s.projectMember.userId, userId)),
+				});
+				if (!existingProjectMember) {
+					await tx
+						.insert(s.projectMember)
+						.values({ projectId: inv.projectId, userId, role: inv.role })
+						.execute();
+				}
+			}
+
+			await tx.update(s.invitation).set({ status: 'accepted' }).where(eq(s.invitation.id, inv.id)).execute();
+		});
+	}
+};
+
+// ---------------------------------------------------------------------------
+// Startup setup
+// ---------------------------------------------------------------------------
+
 export const ensureOrganizationSetup = async (): Promise<void> => {
-	const firstUser = await userQueries.getFirst();
-	if (!firstUser) {
-		return; // No users yet, nothing to do
+	if (isCloud()) {
+		return;
 	}
 
-	// Check if there's an organization
+	const firstUser = await userQueries.getFirst();
+	if (!firstUser) {
+		return;
+	}
+
 	let org = await getFirstOrganization();
 
 	if (!org) {
-		// Create default organization
-		org = await createOrganization({
-			name: 'Default Organization',
-			slug: 'default',
-		});
-
-		// Add first user as org_admin
-		await addOrgMember({
-			orgId: org.id,
-			userId: firstUser.id,
-			role: 'admin',
-		});
+		org = await createOrganization({ name: 'Default Organization', slug: 'default' });
+		await addOrgMember({ orgId: org.id, userId: firstUser.id, role: 'admin' });
 	}
 
-	// Check if first user is a member of the org
 	const membership = await getOrgMember(org.id, firstUser.id);
 	if (!membership) {
-		await addOrgMember({
-			orgId: org.id,
-			userId: firstUser.id,
-			role: 'admin',
-		});
+		await addOrgMember({ orgId: org.id, userId: firstUser.id, role: 'admin' });
 	}
 
-	// Assign any orphaned projects (projects without org) to the default org
 	await db.update(s.project).set({ orgId: org.id }).where(isNull(s.project.orgId)).execute();
-
-	// Ensure a project exists for the current NAO_DEFAULT_PROJECT_PATH
 	await ensureDefaultProject(org);
 };
 
-/**
- * Ensures a project exists for the current NAO_DEFAULT_PROJECT_PATH.
- * When users change the project path and restart, the DB may not have a record for the new path.
- */
 const ensureDefaultProject = async (org: DBOrganization): Promise<void> => {
+	if (!isSelfHosted()) {
+		return;
+	}
+
 	const projectPath = env.NAO_DEFAULT_PROJECT_PATH;
 	if (!projectPath) {
 		return;
@@ -254,7 +371,6 @@ const ensureDefaultProject = async (org: DBOrganization): Promise<void> => {
 		orgId: org.id,
 	});
 
-	// Add all org members to the new project
 	const orgMembers = await db.select().from(s.orgMember).where(eq(s.orgMember.orgId, org.id)).execute();
 	for (const member of orgMembers) {
 		await projectQueries.addProjectMember({

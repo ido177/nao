@@ -109,7 +109,7 @@ export const getDefaultProject = async (): Promise<DBProject | null> => {
 	return getProjectByPath(projectPath);
 };
 
-export const getProjectByUserId = async (userId: string): Promise<DBProject | null> => {
+export const getDefaultProjectForUser = async (userId: string): Promise<DBProject | null> => {
 	const projectPath = env.NAO_DEFAULT_PROJECT_PATH;
 	if (!projectPath) {
 		return null;
@@ -120,13 +120,25 @@ export const getProjectByUserId = async (userId: string): Promise<DBProject | nu
 		return null;
 	}
 
-	const userProject = await getProjectMember(project.id, userId);
+	const membership = await getProjectMember(project.id, userId);
+	return membership ? project : null;
+};
 
-	if (!userProject) {
+export const getProjectForUser = async (projectId: string, userId: string): Promise<DBProject | null> => {
+	const project = await getProjectById(projectId);
+	if (!project) {
 		return null;
 	}
 
-	return project;
+	const membership = await getProjectMember(project.id, userId);
+	return membership ? project : null;
+};
+
+/** @deprecated Use getDefaultProjectForUser instead */
+export const getProjectByUserId = getDefaultProjectForUser;
+
+export const listProjectsByOrgId = async (orgId: string): Promise<DBProject[]> => {
+	return db.select().from(s.project).where(eq(s.project.orgId, orgId)).execute();
 };
 
 export const checkProjectHasMoreThanOneAdmin = async (projectId: string): Promise<boolean> => {

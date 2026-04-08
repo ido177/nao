@@ -54,3 +54,10 @@ export function buildResetPasswordEmail(
 	);
 	return { subject, html };
 }
+
+export function buildInvitationEmail(opts: { orgName: string; inviterName: string; token: string }): CreatedEmail {
+	const acceptUrl = `${env.BETTER_AUTH_URL}invite/${opts.token}`;
+	const subject = `${opts.inviterName} invited you to join ${opts.orgName} on nao`;
+	const html = `<p>You've been invited to join <strong>${opts.orgName}</strong> on nao.</p><p><a href="${acceptUrl}">Accept invitation</a></p>`;
+	return { subject, html };
+}

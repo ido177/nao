@@ -1,5 +1,5 @@
 import type { LlmProvider } from '@nao/shared/types';
-import { SHARE_VISIBILITY, USER_ROLES } from '@nao/shared/types';
+import { INVITATION_SCOPES, INVITATION_STATUSES, SHARE_VISIBILITY, USER_ROLES } from '@nao/shared/types';
 import { type ProviderMetadata } from 'ai';
 import { sql } from 'drizzle-orm';
 import { check, index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
@@ -134,6 +134,36 @@ export const orgMember = sqliteTable(
 			.notNull(),
 	},
 	(t) => [primaryKey({ columns: [t.orgId, t.userId] }), index('org_member_userId_idx').on(t.userId)],
+);
+
+export const invitation = sqliteTable(
+	'invitation',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		orgId: text('org_id')
+			.notNull()
+			.references(() => organization.id, { onDelete: 'cascade' }),
+		projectId: text('project_id'),
+		email: text('email').notNull(),
+		role: text('role', { enum: USER_ROLES }).notNull(),
+		scope: text('scope', { enum: INVITATION_SCOPES }).notNull(),
+		invitedBy: text('invited_by')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		token: text('token').notNull().unique(),
+		status: text('status', { enum: INVITATION_STATUSES }).notNull().default('pending'),
+		expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+	},
+	(t) => [
+		index('invitation_orgId_idx').on(t.orgId),
+		index('invitation_email_idx').on(t.email),
+		index('invitation_token_idx').on(t.token),
+	],
 );
 
 export const project = sqliteTable(

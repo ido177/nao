@@ -2,6 +2,18 @@ export type UserRole = 'admin' | 'user' | 'viewer';
 
 export const USER_ROLES = ['admin', 'user', 'viewer'] as const satisfies readonly UserRole[];
 
+export type DeploymentMode = 'self-hosted' | 'cloud';
+
+export const DEPLOYMENT_MODES = ['self-hosted', 'cloud'] as const satisfies readonly DeploymentMode[];
+
+export type InvitationStatus = 'pending' | 'accepted' | 'expired';
+
+export const INVITATION_STATUSES = ['pending', 'accepted', 'expired'] as const satisfies readonly InvitationStatus[];
+
+export type InvitationScope = 'org' | 'project';
+
+export const INVITATION_SCOPES = ['org', 'project'] as const satisfies readonly InvitationScope[];
+
 export type UpdatedAtFilter = { mode: 'single'; value: string } | { mode: 'range'; start: string; end: string };
 
 export const NO_CACHE_SCHEDULE = 'no-cache';

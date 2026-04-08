@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
@@ -27,6 +28,7 @@ import { Route as SidebarLayoutSettingsLogsRouteImport } from './routes/_sidebar
 import { Route as SidebarLayoutSettingsGeneralRouteImport } from './routes/_sidebar-layout.settings.general'
 import { Route as SidebarLayoutSettingsContextExplorerRouteImport } from './routes/_sidebar-layout.settings.context-explorer'
 import { Route as SidebarLayoutSettingsChatsReplayRouteImport } from './routes/_sidebar-layout.settings.chats-replay'
+import { Route as SidebarLayoutSettingsOrganizationRouteImport } from './routes/_sidebar-layout.settings.organization'
 import { Route as SidebarLayoutChatLayoutChatIdRouteImport } from './routes/_sidebar-layout._chat-layout.$chatId'
 import { Route as SidebarLayoutSettingsProjectIndexRouteImport } from './routes/_sidebar-layout.settings.project.index'
 import { Route as SidebarLayoutStoriesSharedShareIdRouteImport } from './routes/_sidebar-layout.stories.shared.$shareId'
@@ -40,6 +42,11 @@ import { Route as SidebarLayoutSettingsProjectMcpServersRouteImport } from './ro
 import { Route as SidebarLayoutSettingsProjectAgentRouteImport } from './routes/_sidebar-layout.settings.project.agent'
 import { Route as SidebarLayoutStoriesPreviewChatIdStoryIdRouteImport } from './routes/_sidebar-layout.stories.preview.$chatId.$storyId'
 
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -139,6 +146,12 @@ const SidebarLayoutSettingsChatsReplayRoute =
     path: '/chats-replay',
     getParentRoute: () => SidebarLayoutSettingsRoute,
   } as any)
+const SidebarLayoutSettingsOrganizationRoute =
+  SidebarLayoutSettingsOrganizationRouteImport.update({
+    id: '/organization',
+    path: '/organization',
+    getParentRoute: () => SidebarLayoutSettingsRoute,
+  } as any)
 const SidebarLayoutChatLayoutChatIdRoute =
   SidebarLayoutChatLayoutChatIdRouteImport.update({
     id: '/$chatId',
@@ -215,6 +228,7 @@ const SidebarLayoutStoriesPreviewChatIdStoryIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof SidebarLayoutChatLayoutIndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -225,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/settings/general': typeof SidebarLayoutSettingsGeneralRoute
   '/settings/logs': typeof SidebarLayoutSettingsLogsRoute
   '/settings/memory': typeof SidebarLayoutSettingsMemoryRoute
+  '/settings/organization': typeof SidebarLayoutSettingsOrganizationRoute
   '/settings/project': typeof SidebarLayoutSettingsProjectRouteWithChildren
   '/settings/usage': typeof SidebarLayoutSettingsUsageRoute
   '/shared-chat/$shareId': typeof SidebarLayoutSharedChatShareIdRoute
@@ -245,6 +260,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof SidebarLayoutChatLayoutIndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -254,6 +270,7 @@ export interface FileRoutesByTo {
   '/settings/general': typeof SidebarLayoutSettingsGeneralRoute
   '/settings/logs': typeof SidebarLayoutSettingsLogsRoute
   '/settings/memory': typeof SidebarLayoutSettingsMemoryRoute
+  '/settings/organization': typeof SidebarLayoutSettingsOrganizationRoute
   '/settings/usage': typeof SidebarLayoutSettingsUsageRoute
   '/shared-chat/$shareId': typeof SidebarLayoutSharedChatShareIdRoute
   '/settings': typeof SidebarLayoutSettingsIndexRoute
@@ -274,6 +291,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_sidebar-layout': typeof SidebarLayoutRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -284,9 +302,10 @@ export interface FileRoutesById {
   '/_sidebar-layout/settings/context-explorer': typeof SidebarLayoutSettingsContextExplorerRoute
   '/_sidebar-layout/settings/general': typeof SidebarLayoutSettingsGeneralRoute
   '/_sidebar-layout/settings/logs': typeof SidebarLayoutSettingsLogsRoute
-  '/_sidebar-layout/settings/memory': typeof SidebarLayoutSettingsMemoryRoute
-  '/_sidebar-layout/settings/project': typeof SidebarLayoutSettingsProjectRouteWithChildren
-  '/_sidebar-layout/settings/usage': typeof SidebarLayoutSettingsUsageRoute
+    '/_sidebar-layout/settings/memory': typeof SidebarLayoutSettingsMemoryRoute
+    '/_sidebar-layout/settings/organization': typeof SidebarLayoutSettingsOrganizationRoute
+    '/_sidebar-layout/settings/project': typeof SidebarLayoutSettingsProjectRouteWithChildren
+    '/_sidebar-layout/settings/usage': typeof SidebarLayoutSettingsUsageRoute
   '/_sidebar-layout/shared-chat/$shareId': typeof SidebarLayoutSharedChatShareIdRoute
   '/_sidebar-layout/_chat-layout/': typeof SidebarLayoutChatLayoutIndexRoute
   '/_sidebar-layout/settings/': typeof SidebarLayoutSettingsIndexRoute
@@ -308,6 +327,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/forgot-password'
+    | '/invite/$token'
     | '/login'
     | '/reset-password'
     | '/signup'
@@ -318,6 +338,7 @@ export interface FileRouteTypes {
     | '/settings/general'
     | '/settings/logs'
     | '/settings/memory'
+    | '/settings/organization'
     | '/settings/project'
     | '/settings/usage'
     | '/shared-chat/$shareId'
@@ -338,6 +359,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/forgot-password'
+    | '/invite/$token'
     | '/login'
     | '/reset-password'
     | '/signup'
@@ -347,6 +369,7 @@ export interface FileRouteTypes {
     | '/settings/general'
     | '/settings/logs'
     | '/settings/memory'
+    | '/settings/organization'
     | '/settings/usage'
     | '/shared-chat/$shareId'
     | '/settings'
@@ -366,6 +389,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_sidebar-layout'
     | '/forgot-password'
+    | '/invite/$token'
     | '/login'
     | '/reset-password'
     | '/signup'
@@ -377,6 +401,7 @@ export interface FileRouteTypes {
     | '/_sidebar-layout/settings/general'
     | '/_sidebar-layout/settings/logs'
     | '/_sidebar-layout/settings/memory'
+    | '/_sidebar-layout/settings/organization'
     | '/_sidebar-layout/settings/project'
     | '/_sidebar-layout/settings/usage'
     | '/_sidebar-layout/shared-chat/$shareId'
@@ -399,6 +424,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   SidebarLayoutRoute: typeof SidebarLayoutRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
@@ -406,6 +432,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -530,6 +563,13 @@ declare module '@tanstack/react-router' {
       path: '/chats-replay'
       fullPath: '/settings/chats-replay'
       preLoaderRoute: typeof SidebarLayoutSettingsChatsReplayRouteImport
+      parentRoute: typeof SidebarLayoutSettingsRoute
+    }
+    '/_sidebar-layout/settings/organization': {
+      id: '/_sidebar-layout/settings/organization'
+      path: '/organization'
+      fullPath: '/settings/organization'
+      preLoaderRoute: typeof SidebarLayoutSettingsOrganizationRouteImport
       parentRoute: typeof SidebarLayoutSettingsRoute
     }
     '/_sidebar-layout/_chat-layout/$chatId': {
@@ -680,6 +720,7 @@ interface SidebarLayoutSettingsRouteChildren {
   SidebarLayoutSettingsGeneralRoute: typeof SidebarLayoutSettingsGeneralRoute
   SidebarLayoutSettingsLogsRoute: typeof SidebarLayoutSettingsLogsRoute
   SidebarLayoutSettingsMemoryRoute: typeof SidebarLayoutSettingsMemoryRoute
+  SidebarLayoutSettingsOrganizationRoute: typeof SidebarLayoutSettingsOrganizationRoute
   SidebarLayoutSettingsProjectRoute: typeof SidebarLayoutSettingsProjectRouteWithChildren
   SidebarLayoutSettingsUsageRoute: typeof SidebarLayoutSettingsUsageRoute
   SidebarLayoutSettingsIndexRoute: typeof SidebarLayoutSettingsIndexRoute
@@ -692,6 +733,7 @@ const SidebarLayoutSettingsRouteChildren: SidebarLayoutSettingsRouteChildren = {
   SidebarLayoutSettingsGeneralRoute: SidebarLayoutSettingsGeneralRoute,
   SidebarLayoutSettingsLogsRoute: SidebarLayoutSettingsLogsRoute,
   SidebarLayoutSettingsMemoryRoute: SidebarLayoutSettingsMemoryRoute,
+  SidebarLayoutSettingsOrganizationRoute: SidebarLayoutSettingsOrganizationRoute,
   SidebarLayoutSettingsProjectRoute:
     SidebarLayoutSettingsProjectRouteWithChildren,
   SidebarLayoutSettingsUsageRoute: SidebarLayoutSettingsUsageRoute,
@@ -730,6 +772,7 @@ const SidebarLayoutRouteWithChildren = SidebarLayoutRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   SidebarLayoutRoute: SidebarLayoutRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  InviteTokenRoute: InviteTokenRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,

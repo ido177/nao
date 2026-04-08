@@ -6,11 +6,13 @@ import { RouterProvider, createRouter } from '@tanstack/react-router';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import superjson from 'superjson';
+import { ActiveProjectProvider } from './contexts/active-project';
 import { PostHogProvider } from './contexts/posthog.provider';
 import { ThemeProvider } from './contexts/theme.provider';
 import { McpProvider } from './contexts/mcp';
 import { routeTree } from './routeTree.gen';
 import reportWebVitals from './reportWebVitals';
+import { getActiveProjectId } from './lib/active-project';
 import type { TrpcRouter } from '@nao/backend/trpc';
 
 // Register the router instance for type safety
@@ -51,6 +53,10 @@ export const trpcClient = createTRPCClient<TrpcRouter>({
 		httpBatchLink({
 			url: '/api/trpc',
 			transformer: superjson,
+			headers: () => {
+				const projectId = getActiveProjectId();
+				return projectId ? { 'x-project-id': projectId } : {};
+			},
 		}),
 	],
 });
@@ -69,11 +75,13 @@ if (!rootElement.innerHTML) {
 		<StrictMode>
 			<ThemeProvider>
 				<QueryClientProvider client={queryClient}>
-					<McpProvider>
-						<PostHogProvider>
-							<RouterProvider router={router} />
-						</PostHogProvider>
-					</McpProvider>
+					<ActiveProjectProvider>
+						<McpProvider>
+							<PostHogProvider>
+								<RouterProvider router={router} />
+							</PostHogProvider>
+						</McpProvider>
+					</ActiveProjectProvider>
 				</QueryClientProvider>
 			</ThemeProvider>
 		</StrictMode>,

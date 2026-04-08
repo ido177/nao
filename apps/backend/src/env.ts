@@ -11,6 +11,7 @@ dotenv.config({
 
 const envSchema = z.object({
 	MODE: z.enum(['dev', 'prod', 'test']).default('dev'),
+	NAO_MODE: z.enum(['self-hosted', 'cloud']).optional(),
 
 	DB_URI: z.string().default('sqlite:./db.sqlite'),
 	DB_SSL: z
@@ -67,6 +68,11 @@ if (!result.success) {
 		const path = issue.path.join('.');
 		console.error(`${path}: ${issue.message}`);
 	}
+	process.exit(1);
+}
+
+if (result.data.NAO_DEFAULT_PROJECT_PATH && result.data.NAO_MODE === 'cloud') {
+	console.error('NAO_DEFAULT_PROJECT_PATH and NAO_MODE=cloud cannot be set at the same time.');
 	process.exit(1);
 }
 

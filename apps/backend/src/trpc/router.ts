@@ -6,9 +6,11 @@ import { chatForkRoutes } from './chat-fork.routes';
 import { citationRoutes } from './citation.routes';
 import { contextExplorerRoutes } from './context-explorer.routes';
 import { feedbackRoutes } from './feedback.routes';
+import { invitationRoutes } from './invitation.routes';
 import { logRoutes } from './log.routes';
 import { mcpRoutes } from './mcp.routes';
 import { memoryRoutes } from './memory.routes';
+import { organizationRoutes } from './organization.routes';
 import { posthogRoutes } from './posthog.routes';
 import { projectRoutes } from './project.routes';
 import { sharedChatRoutes } from './shared-chat.routes';
@@ -29,7 +31,9 @@ export const trpcRouter = router({
 	citation: citationRoutes,
 	contextExplorer: contextExplorerRoutes,
 	feedback: feedbackRoutes,
+	invitation: invitationRoutes,
 	log: logRoutes,
+	organization: organizationRoutes,
 	posthog: posthogRoutes,
 	project: projectRoutes,
 	storyShare: sharedStoryRoutes,

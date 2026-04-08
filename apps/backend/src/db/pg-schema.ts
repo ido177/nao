@@ -1,5 +1,5 @@
 import type { LlmProvider } from '@nao/shared/types';
-import { SHARE_VISIBILITY, USER_ROLES } from '@nao/shared/types';
+import { INVITATION_SCOPES, INVITATION_STATUSES, SHARE_VISIBILITY, USER_ROLES } from '@nao/shared/types';
 import { type ProviderMetadata } from 'ai';
 import { sql } from 'drizzle-orm';
 import {
@@ -128,6 +128,34 @@ export const orgMember = pgTable(
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 	},
 	(t) => [primaryKey({ columns: [t.orgId, t.userId] }), index('org_member_userId_idx').on(t.userId)],
+);
+
+export const invitation = pgTable(
+	'invitation',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		orgId: text('org_id')
+			.notNull()
+			.references(() => organization.id, { onDelete: 'cascade' }),
+		projectId: text('project_id'),
+		email: text('email').notNull(),
+		role: text('role', { enum: USER_ROLES }).notNull(),
+		scope: text('scope', { enum: INVITATION_SCOPES }).notNull(),
+		invitedBy: text('invited_by')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		token: text('token').notNull().unique(),
+		status: text('status', { enum: INVITATION_STATUSES }).notNull().default('pending'),
+		expiresAt: timestamp('expires_at').notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+	},
+	(t) => [
+		index('invitation_orgId_idx').on(t.orgId),
+		index('invitation_email_idx').on(t.email),
+		index('invitation_token_idx').on(t.token),
+	],
 );
 
 export const project = pgTable(
