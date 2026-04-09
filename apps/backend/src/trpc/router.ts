@@ -1,4 +1,5 @@
 import { accountRoutes } from './account.routes';
+import { apiKeyRoutes } from './api-key.routes';
 import { authConfigRoutes } from './auth-config.routes';
 import { chartRoutes } from './chart.routes';
 import { chatRoutes } from './chat.routes';
@@ -9,6 +10,7 @@ import { feedbackRoutes } from './feedback.routes';
 import { logRoutes } from './log.routes';
 import { mcpRoutes } from './mcp.routes';
 import { memoryRoutes } from './memory.routes';
+import { organizationRoutes } from './organization.routes';
 import { posthogRoutes } from './posthog.routes';
 import { projectRoutes } from './project.routes';
 import { sharedChatRoutes } from './shared-chat.routes';
@@ -37,8 +39,10 @@ export const trpcRouter = router({
 	usage: usageRoutes,
 	user: userRoutes,
 	memory: memoryRoutes,
+	organization: organizationRoutes,
 	authConfig: authConfigRoutes,
 	account: accountRoutes,
+	apiKey: apiKeyRoutes,
 	mcp: mcpRoutes,
 	system: systemRoutes,
 	skill: skillRoutes,

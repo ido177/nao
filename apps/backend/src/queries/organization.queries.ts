@@ -1,6 +1,6 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, count, eq, isNull } from 'drizzle-orm';
 
-import s, { DBOrganization, DBOrgMember, NewOrganization, NewOrgMember } from '../db/abstractSchema';
+import s, { DBOrganization, DBOrgInvite, DBOrgMember, NewOrganization, NewOrgMember } from '../db/abstractSchema';
 import { db } from '../db/db';
 import { env } from '../env';
 import { OrgRole } from '../types/organization';
@@ -185,6 +185,27 @@ export const addUserToDefaultProjectIfExists = async (userId: string): Promise<v
 };
 
 /**
+ * Cloud mode: create a personal default organization for a new user.
+ * Skips if the user is already a member of any organization (e.g. invited before signup).
+ */
+export const initializePersonalOrganization = async (userId: string): Promise<void> => {
+	const existingMembership = await getUserOrgMembership(userId);
+	if (existingMembership) {
+		return;
+	}
+
+	const user = await userQueries.get({ id: userId });
+	const orgName = user ? `${user.name}'s Organization` : 'Personal Organization';
+	const orgSlug = `org-${userId.slice(0, 8)}`;
+
+	await db.transaction(async (tx) => {
+		const [org] = await tx.insert(s.organization).values({ name: orgName, slug: orgSlug }).returning().execute();
+
+		await tx.insert(s.orgMember).values({ orgId: org.id, userId, role: 'admin' }).execute();
+	});
+};
+
+/**
  * Startup check: Ensures organization structure is valid.
  * - If there are users but no organization, creates one and assigns first user as org_admin
  * - If there are projects without an org, assigns them to the default org
@@ -229,6 +250,120 @@ export const ensureOrganizationSetup = async (): Promise<void> => {
 
 	// Ensure a project exists for the current NAO_DEFAULT_PROJECT_PATH
 	await ensureDefaultProject(org);
+};
+
+export interface OrgMemberWithUser {
+	userId: string;
+	name: string;
+	email: string;
+	role: OrgRole;
+}
+
+export const getOrgMembersWithUsers = async (orgId: string): Promise<OrgMemberWithUser[]> => {
+	const rows = await db
+		.select({
+			userId: s.orgMember.userId,
+			name: s.user.name,
+			email: s.user.email,
+			role: s.orgMember.role,
+		})
+		.from(s.orgMember)
+		.innerJoin(s.user, eq(s.orgMember.userId, s.user.id))
+		.where(eq(s.orgMember.orgId, orgId))
+		.execute();
+	return rows;
+};
+
+export const updateOrgMemberRole = async (orgId: string, userId: string, role: OrgRole): Promise<void> => {
+	await db
+		.update(s.orgMember)
+		.set({ role })
+		.where(and(eq(s.orgMember.orgId, orgId), eq(s.orgMember.userId, userId)))
+		.execute();
+};
+
+export const removeOrgMember = async (orgId: string, userId: string): Promise<void> => {
+	await db
+		.delete(s.orgMember)
+		.where(and(eq(s.orgMember.orgId, orgId), eq(s.orgMember.userId, userId)))
+		.execute();
+};
+
+export const countOrgAdmins = async (orgId: string): Promise<number> => {
+	const [result] = await db
+		.select({ count: count() })
+		.from(s.orgMember)
+		.where(and(eq(s.orgMember.orgId, orgId), eq(s.orgMember.role, 'admin')))
+		.execute();
+	return result?.count ?? 0;
+};
+
+// --- Org Invites ---
+
+export interface OrgInviteInfo {
+	id: string;
+	email: string;
+	role: OrgRole;
+	createdAt: Date;
+}
+
+export const createOrgInvite = async (
+	orgId: string,
+	email: string,
+	role: OrgRole,
+	invitedBy: string,
+): Promise<DBOrgInvite> => {
+	const [invite] = await db
+		.insert(s.orgInvite)
+		.values({ orgId, email: email.toLowerCase(), role, invitedBy })
+		.returning()
+		.execute();
+	return invite;
+};
+
+export const getOrgInvitesByEmail = async (email: string): Promise<DBOrgInvite[]> => {
+	return db.select().from(s.orgInvite).where(eq(s.orgInvite.email, email.toLowerCase())).execute();
+};
+
+export const getOrgInvitesByOrg = async (orgId: string): Promise<OrgInviteInfo[]> => {
+	return db
+		.select({
+			id: s.orgInvite.id,
+			email: s.orgInvite.email,
+			role: s.orgInvite.role,
+			createdAt: s.orgInvite.createdAt,
+		})
+		.from(s.orgInvite)
+		.where(eq(s.orgInvite.orgId, orgId))
+		.execute();
+};
+
+export const deleteOrgInvite = async (id: string): Promise<void> => {
+	await db.delete(s.orgInvite).where(eq(s.orgInvite.id, id)).execute();
+};
+
+export const deleteOrgInvitesByEmail = async (email: string): Promise<void> => {
+	await db.delete(s.orgInvite).where(eq(s.orgInvite.email, email.toLowerCase())).execute();
+};
+
+/** Resolve all pending invites for a newly created user. */
+export const resolveInvitesForUser = async (userId: string, email: string): Promise<void> => {
+	const invites = await getOrgInvitesByEmail(email);
+	if (invites.length === 0) {
+		return;
+	}
+
+	await db.transaction(async (tx) => {
+		for (const invite of invites) {
+			const existing = await tx.query.orgMember.findFirst({
+				where: and(eq(s.orgMember.orgId, invite.orgId), eq(s.orgMember.userId, userId)),
+			});
+			if (!existing) {
+				await tx.insert(s.orgMember).values({ orgId: invite.orgId, userId, role: invite.role }).execute();
+			}
+			await tx.delete(s.orgInvite).where(eq(s.orgInvite.id, invite.id)).execute();
+		}
+	});
 };
 
 /**
