@@ -3,8 +3,12 @@ set -e
 
 echo "=== nao Chat Server Entrypoint ==="
 
-# Default values
-NAO_CONTEXT_SOURCE="${NAO_CONTEXT_SOURCE:-local}"
+# Default values — cloud mode manages projects dynamically via the API
+if [ "$NAO_MODE" = "cloud" ]; then
+    NAO_CONTEXT_SOURCE="${NAO_CONTEXT_SOURCE:-api}"
+else
+    NAO_CONTEXT_SOURCE="${NAO_CONTEXT_SOURCE:-local}"
+fi
 NAO_DEFAULT_PROJECT_PATH="${NAO_DEFAULT_PROJECT_PATH:-/app/context}"
 
 echo "Context source: $NAO_CONTEXT_SOURCE"
