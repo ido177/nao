@@ -6,10 +6,11 @@ echo "=== nao Chat Server Entrypoint ==="
 # Default values — cloud mode manages projects dynamically via the API
 if [ "$NAO_MODE" = "cloud" ]; then
     NAO_CONTEXT_SOURCE="${NAO_CONTEXT_SOURCE:-api}"
+    unset NAO_DEFAULT_PROJECT_PATH
 else
     NAO_CONTEXT_SOURCE="${NAO_CONTEXT_SOURCE:-local}"
+    NAO_DEFAULT_PROJECT_PATH="${NAO_DEFAULT_PROJECT_PATH:-/app/context}"
 fi
-NAO_DEFAULT_PROJECT_PATH="${NAO_DEFAULT_PROJECT_PATH:-/app/context}"
 
 echo "Context source: $NAO_CONTEXT_SOURCE"
 echo "Target path: $NAO_DEFAULT_PROJECT_PATH"
@@ -117,7 +118,9 @@ if [ -z "$BETTER_AUTH_SECRET" ]; then
 fi
 
 # Export the path for child processes
-export NAO_DEFAULT_PROJECT_PATH
+if [ "$NAO_MODE" != "cloud" ]; then
+    export NAO_DEFAULT_PROJECT_PATH
+fi
 
 # Start supervisord (which manages FastAPI and Chat Server)
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/nao.conf
