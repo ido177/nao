@@ -81,6 +81,7 @@ jobs:
                           -e "GITHUB_CLIENT_ID=${{ secrets.PREVIEW_GITHUB_CLIENT_ID }}" \
                           -e "GITHUB_CLIENT_SECRET=${{ secrets.PREVIEW_GITHUB_CLIENT_SECRET }}" \
                           -e "POSTHOG_DISABLED=true" \
+                          -e "NAO_DEFAULT_PROJECT_PATH=" \
                           "$IMAGE"
 
                       echo "Waiting for container to start..."
