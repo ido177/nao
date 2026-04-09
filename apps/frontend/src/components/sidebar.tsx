@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useMatchRoute, useRouterState } from '@tanstack/react-router';
 import { ArrowLeftFromLine, ArrowRightToLine, PlusIcon, ArrowLeft, ChevronRight, SearchIcon, X } from 'lucide-react';
 import { ChatList } from './sidebar-chat-list';
@@ -15,6 +15,16 @@ import type { LucideIcon } from 'lucide-react';
 import type { ChatListItem as ChatListItemType } from '@nao/backend/chat';
 import type { SharedChatWithDetails } from '@nao/backend/shared-chat';
 import { Button } from '@/components/ui/button';
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectLabel,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
+import { getActiveProjectId, setActiveProjectId } from '@/lib/active-project';
 import { cn, hideIf } from '@/lib/utils';
 import { useChatListQuery } from '@/queries/use-chat-list-query';
 import { useSidebar } from '@/contexts/sidebar';
@@ -30,10 +40,12 @@ const normalizeDate = (v: Date | number | string): number => (v instanceof Date 
 export function Sidebar() {
 	const chats = useChatListQuery();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const matchRoute = useMatchRoute();
 	const { isCollapsed, isMobile, isMobileOpen, closeMobile, toggle: toggleSidebar } = useSidebar();
 	const { fire: openCommandMenu } = useCommandMenuCallback();
 	const project = useQuery(trpc.project.getCurrent.queryOptions());
+	const projects = useQuery(trpc.project.listForCurrentUser.queryOptions());
 	const isAdmin = project.data?.userRole === 'admin';
 
 	const locationPath = useRouterState({ select: (s) => s.location.pathname });
@@ -78,6 +90,32 @@ export function Sidebar() {
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	}, [handleStartNewChat]);
+
+	useEffect(() => {
+		if (!project.data?.id) {
+			return;
+		}
+
+		if (getActiveProjectId() !== project.data.id) {
+			setActiveProjectId(project.data.id);
+		}
+	}, [project.data?.id]);
+
+	const handleProjectChange = useCallback(
+		async (projectId: string) => {
+			if (!project.data || projectId === project.data.id) {
+				return;
+			}
+
+			setActiveProjectId(projectId);
+			queryClient.clear();
+			await navigate({ to: '/' });
+			if (isMobile) {
+				closeMobile();
+			}
+		},
+		[closeMobile, isMobile, navigate, project.data, queryClient],
+	);
 
 	const sidebarContent = (
 		<div
@@ -183,6 +221,14 @@ export function Sidebar() {
 						/>
 					</>
 				)}
+
+				{!effectiveIsCollapsed && project.data && (projects.data?.length ?? 0) > 1 && (
+					<ProjectSelector
+						projects={projects.data ?? []}
+						currentProjectId={project.data.id}
+						onChange={handleProjectChange}
+					/>
+				)}
 			</div>
 
 			{isInSettings ? (
@@ -215,6 +261,42 @@ export function Sidebar() {
 	}
 
 	return sidebarContent;
+}
+
+function ProjectSelector({
+	projects,
+	currentProjectId,
+	onChange,
+}: {
+	projects: Array<{ id: string; name: string; userRole: 'admin' | 'user' | 'viewer' }>;
+	currentProjectId: string;
+	onChange: (projectId: string) => void;
+}) {
+	return (
+		<div className='px-2 pt-1 pb-2'>
+			<div className='px-1 pb-1 text-xs text-muted-foreground'>Project</div>
+			<Select value={currentProjectId} onValueChange={onChange}>
+				<SelectTrigger className='w-full justify-between bg-sidebar-accent/40 hover:bg-sidebar-accent/60'>
+					<SelectValue placeholder='Select project' />
+				</SelectTrigger>
+				<SelectContent position='popper' align='start'>
+					<SelectGroup>
+						<SelectLabel>Projects</SelectLabel>
+						{projects.map((project) => (
+							<SelectItem key={project.id} value={project.id}>
+								<span className='flex min-w-0 items-center justify-between gap-3'>
+									<span className='truncate'>{project.name}</span>
+									<span className='shrink-0 text-xs capitalize text-muted-foreground'>
+										{project.userRole}
+									</span>
+								</span>
+							</SelectItem>
+						))}
+					</SelectGroup>
+				</SelectContent>
+			</Select>
+		</div>
+	);
 }
 
 function SidebarMenuButton({

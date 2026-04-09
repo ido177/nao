@@ -87,8 +87,9 @@ elif [ "$NAO_CONTEXT_SOURCE" = "api" ]; then
     echo ""
     echo "=== API Context Mode ==="
     echo "Context will be deployed via nao deploy CLI command."
-    mkdir -p "${NAO_PROJECTS_DIR:-/app/projects}"
     export NAO_PROJECTS_DIR="${NAO_PROJECTS_DIR:-/app/projects}"
+    mkdir -p "$NAO_PROJECTS_DIR"
+    chown nao:nao "$NAO_PROJECTS_DIR"
     unset NAO_DEFAULT_PROJECT_PATH
 
 else

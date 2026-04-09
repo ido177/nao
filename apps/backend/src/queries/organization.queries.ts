@@ -1,6 +1,6 @@
-import { and, count, eq, isNull } from 'drizzle-orm';
+import { and, asc, count, eq, isNull, sql } from 'drizzle-orm';
 
-import s, { DBOrganization, DBOrgInvite, DBOrgMember, NewOrganization, NewOrgMember } from '../db/abstractSchema';
+import s, { DBOrganization, DBOrgMember, NewOrganization, NewOrgMember } from '../db/abstractSchema';
 import { db } from '../db/db';
 import { env } from '../env';
 import { OrgRole } from '../types/organization';
@@ -253,16 +253,25 @@ export const ensureOrganizationSetup = async (): Promise<void> => {
 };
 
 export interface OrgMemberWithUser {
-	userId: string;
+	id: string;
 	name: string;
 	email: string;
 	role: OrgRole;
 }
 
+export interface OrgProjectWithAccess {
+	id: string;
+	name: string;
+	path: string | null;
+	role: OrgRole;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
 export const getOrgMembersWithUsers = async (orgId: string): Promise<OrgMemberWithUser[]> => {
 	const rows = await db
 		.select({
-			userId: s.orgMember.userId,
+			id: s.orgMember.userId,
 			name: s.user.name,
 			email: s.user.email,
 			role: s.orgMember.role,
@@ -271,6 +280,25 @@ export const getOrgMembersWithUsers = async (orgId: string): Promise<OrgMemberWi
 		.innerJoin(s.user, eq(s.orgMember.userId, s.user.id))
 		.where(eq(s.orgMember.orgId, orgId))
 		.execute();
+	return rows;
+};
+
+export const getOrgProjectsWithAccess = async (orgId: string, userId: string): Promise<OrgProjectWithAccess[]> => {
+	const rows = await db
+		.select({
+			id: s.project.id,
+			name: s.project.name,
+			path: s.project.path,
+			role: sql<OrgRole>`coalesce(${s.projectMember.role}, 'viewer')`,
+			createdAt: s.project.createdAt,
+			updatedAt: s.project.updatedAt,
+		})
+		.from(s.project)
+		.leftJoin(s.projectMember, and(eq(s.projectMember.projectId, s.project.id), eq(s.projectMember.userId, userId)))
+		.where(eq(s.project.orgId, orgId))
+		.orderBy(asc(s.project.name))
+		.execute();
+
 	return rows;
 };
 
@@ -289,6 +317,14 @@ export const removeOrgMember = async (orgId: string, userId: string): Promise<vo
 		.execute();
 };
 
+export const removeOrgMemberFromProjects = async (orgId: string, userId: string): Promise<void> => {
+	const projects = await db.select({ id: s.project.id }).from(s.project).where(eq(s.project.orgId, orgId)).execute();
+
+	for (const project of projects) {
+		await projectQueries.removeProjectMember(project.id, userId);
+	}
+};
+
 export const countOrgAdmins = async (orgId: string): Promise<number> => {
 	const [result] = await db
 		.select({ count: count() })
@@ -296,74 +332,6 @@ export const countOrgAdmins = async (orgId: string): Promise<number> => {
 		.where(and(eq(s.orgMember.orgId, orgId), eq(s.orgMember.role, 'admin')))
 		.execute();
 	return result?.count ?? 0;
-};
-
-// --- Org Invites ---
-
-export interface OrgInviteInfo {
-	id: string;
-	email: string;
-	role: OrgRole;
-	createdAt: Date;
-}
-
-export const createOrgInvite = async (
-	orgId: string,
-	email: string,
-	role: OrgRole,
-	invitedBy: string,
-): Promise<DBOrgInvite> => {
-	const [invite] = await db
-		.insert(s.orgInvite)
-		.values({ orgId, email: email.toLowerCase(), role, invitedBy })
-		.returning()
-		.execute();
-	return invite;
-};
-
-export const getOrgInvitesByEmail = async (email: string): Promise<DBOrgInvite[]> => {
-	return db.select().from(s.orgInvite).where(eq(s.orgInvite.email, email.toLowerCase())).execute();
-};
-
-export const getOrgInvitesByOrg = async (orgId: string): Promise<OrgInviteInfo[]> => {
-	return db
-		.select({
-			id: s.orgInvite.id,
-			email: s.orgInvite.email,
-			role: s.orgInvite.role,
-			createdAt: s.orgInvite.createdAt,
-		})
-		.from(s.orgInvite)
-		.where(eq(s.orgInvite.orgId, orgId))
-		.execute();
-};
-
-export const deleteOrgInvite = async (id: string): Promise<void> => {
-	await db.delete(s.orgInvite).where(eq(s.orgInvite.id, id)).execute();
-};
-
-export const deleteOrgInvitesByEmail = async (email: string): Promise<void> => {
-	await db.delete(s.orgInvite).where(eq(s.orgInvite.email, email.toLowerCase())).execute();
-};
-
-/** Resolve all pending invites for a newly created user. */
-export const resolveInvitesForUser = async (userId: string, email: string): Promise<void> => {
-	const invites = await getOrgInvitesByEmail(email);
-	if (invites.length === 0) {
-		return;
-	}
-
-	await db.transaction(async (tx) => {
-		for (const invite of invites) {
-			const existing = await tx.query.orgMember.findFirst({
-				where: and(eq(s.orgMember.orgId, invite.orgId), eq(s.orgMember.userId, userId)),
-			});
-			if (!existing) {
-				await tx.insert(s.orgMember).values({ orgId: invite.orgId, userId, role: invite.role }).execute();
-			}
-			await tx.delete(s.orgInvite).where(eq(s.orgInvite.id, invite.id)).execute();
-		}
-	});
 };
 
 /**
