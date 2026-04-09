@@ -83,9 +83,16 @@ function createAuthInstance(googleConfig: GoogleConfig) {
 					},
 					async after(user, ctx) {
 						const isSocial = ctx?.params?.id === 'google' || ctx?.params?.id === 'github';
-						await orgQueries.initializeDefaultOrganizationForFirstUser(user.id);
-						if (isSocial) {
-							await orgQueries.addUserToDefaultProjectIfExists(user.id);
+
+						await orgQueries.resolveInvitesForUser(user.id, user.email);
+
+						if (env.NAO_MODE === 'cloud') {
+							await orgQueries.initializePersonalOrganization(user.id);
+						} else {
+							await orgQueries.initializeDefaultOrganizationForFirstUser(user.id);
+							if (isSocial) {
+								await orgQueries.addUserToDefaultProjectIfExists(user.id);
+							}
 						}
 					},
 				},

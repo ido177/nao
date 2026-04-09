@@ -11,6 +11,12 @@ export const Route = createFileRoute('/_sidebar-layout/settings/project')({
 
 function ProjectPage() {
 	const project = useQuery(trpc.project.getCurrent.queryOptions());
+	const config = useQuery(trpc.system.getPublicConfig.queryOptions());
+	const isCloud = config.data?.naoMode === 'cloud';
+
+	const emptyMessage = isCloud
+		? 'No project found. Create a project or ask your organization admin to add you to one.'
+		: 'No project configured. Set NAO_DEFAULT_PROJECT_PATH environment variable.';
 
 	return (
 		<SettingsPageWrapper>
@@ -24,7 +30,7 @@ function ProjectPage() {
 							<Outlet />
 						) : (
 							<SettingsCard>
-								<Empty>No project configured. Set NAO_DEFAULT_PROJECT_PATH environment variable.</Empty>
+								<Empty>{emptyMessage}</Empty>
 							</SettingsCard>
 						)}
 					</div>

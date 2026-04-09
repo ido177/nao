@@ -19,6 +19,19 @@ export const getProjectById = async (id: string): Promise<DBProject | null> => {
 	return project ?? null;
 };
 
+export const getProjectByOrgAndName = async (orgId: string, name: string): Promise<DBProject | null> => {
+	const [project] = await db
+		.select()
+		.from(s.project)
+		.where(and(eq(s.project.orgId, orgId), eq(s.project.name, name)))
+		.execute();
+	return project ?? null;
+};
+
+export const touchProjectUpdatedAt = async (projectId: string): Promise<void> => {
+	await db.update(s.project).set({ updatedAt: new Date() }).where(eq(s.project.id, projectId)).execute();
+};
+
 export const getProjectMemoryEnabled = async (projectId: string): Promise<boolean> => {
 	const [project] = await db
 		.select({ agentSettings: s.project.agentSettings })
@@ -103,13 +116,20 @@ export const getAllUsersWithRoles = async (projectId: string): Promise<UserWithR
 
 export const getDefaultProject = async (): Promise<DBProject | null> => {
 	const projectPath = env.NAO_DEFAULT_PROJECT_PATH;
-	if (!projectPath) {
-		return null;
+	if (projectPath) {
+		return getProjectByPath(projectPath);
 	}
-	return getProjectByPath(projectPath);
+
+	const [project] = await db.select().from(s.project).limit(1).execute();
+	return project ?? null;
 };
 
 export const getProjectByUserId = async (userId: string): Promise<DBProject | null> => {
+	if (env.NAO_MODE === 'cloud') {
+		const projects = await listUserProjects(userId);
+		return projects[0] ?? null;
+	}
+
 	const projectPath = env.NAO_DEFAULT_PROJECT_PATH;
 	if (!projectPath) {
 		return null;
@@ -121,7 +141,6 @@ export const getProjectByUserId = async (userId: string): Promise<DBProject | nu
 	}
 
 	const userProject = await getProjectMember(project.id, userId);
-
 	if (!userProject) {
 		return null;
 	}

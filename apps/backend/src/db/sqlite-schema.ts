@@ -136,6 +136,27 @@ export const orgMember = sqliteTable(
 	(t) => [primaryKey({ columns: [t.orgId, t.userId] }), index('org_member_userId_idx').on(t.userId)],
 );
 
+export const orgInvite = sqliteTable(
+	'org_invite',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		orgId: text('org_id')
+			.notNull()
+			.references(() => organization.id, { onDelete: 'cascade' }),
+		email: text('email').notNull(),
+		role: text('role', { enum: ORG_ROLES }).notNull(),
+		invitedBy: text('invited_by')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+	},
+	(t) => [unique().on(t.orgId, t.email), index('org_invite_email_idx').on(t.email)],
+);
+
 export const project = sqliteTable(
 	'project',
 	{
@@ -628,6 +649,29 @@ export const message_part_chart_image = sqliteTable('chart_image', {
 		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 		.notNull(),
 });
+
+export const apiKey = sqliteTable(
+	'api_key',
+	{
+		id: text('id')
+			.$defaultFn(() => crypto.randomUUID())
+			.primaryKey(),
+		orgId: text('org_id')
+			.notNull()
+			.references(() => organization.id, { onDelete: 'cascade' }),
+		name: text('name').notNull(),
+		keyHash: text('key_hash').notNull().unique(),
+		keyPrefix: text('key_prefix').notNull(),
+		createdBy: text('created_by')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		lastUsedAt: integer('last_used_at', { mode: 'timestamp_ms' }),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+	},
+	(t) => [index('api_key_orgId_idx').on(t.orgId), index('api_key_keyHash_idx').on(t.keyHash)],
+);
 
 export const log = sqliteTable(
 	'log',

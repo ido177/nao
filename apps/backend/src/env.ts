@@ -50,6 +50,8 @@ const envSchema = z.object({
 	APP_BUILD_DATE: z.string().default(''),
 
 	NAO_DEFAULT_PROJECT_PATH: z.string().optional(),
+	NAO_MODE: z.enum(['self-hosted', 'cloud']).default('self-hosted'),
+	NAO_PROJECTS_DIR: z.string().default('./projects'),
 	NAO_CORE_VERSION: z.string().optional(),
 
 	POSTHOG_KEY: z.string().optional(),
@@ -67,6 +69,11 @@ if (!result.success) {
 		const path = issue.path.join('.');
 		console.error(`${path}: ${issue.message}`);
 	}
+	process.exit(1);
+}
+
+if (result.data.NAO_DEFAULT_PROJECT_PATH && result.data.NAO_MODE === 'cloud') {
+	console.error('NAO_DEFAULT_PROJECT_PATH and NAO_MODE=cloud cannot be set at the same time.');
 	process.exit(1);
 }
 

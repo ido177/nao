@@ -42,6 +42,9 @@ export type NewOrganization = typeof sqliteSchema.organization.$inferInsert;
 export type DBOrgMember = typeof sqliteSchema.orgMember.$inferSelect;
 export type NewOrgMember = typeof sqliteSchema.orgMember.$inferInsert;
 
+export type DBOrgInvite = typeof sqliteSchema.orgInvite.$inferSelect;
+export type NewOrgInvite = typeof sqliteSchema.orgInvite.$inferInsert;
+
 export type DBProjectSavedPrompt = typeof sqliteSchema.projectSavedPrompt.$inferSelect;
 export type NewProjectSavedPrompt = typeof sqliteSchema.projectSavedPrompt.$inferInsert;
 
@@ -81,5 +84,8 @@ export type NewLog = typeof sqliteSchema.log.$inferInsert;
 
 export type DBMessageImage = typeof sqliteSchema.messageImage.$inferSelect;
 export type NewMessageImage = typeof sqliteSchema.messageImage.$inferInsert;
+
+export type DBApiKey = typeof sqliteSchema.apiKey.$inferSelect;
+export type NewApiKey = typeof sqliteSchema.apiKey.$inferInsert;
 
 export default allSchema as typeof sqliteSchema;

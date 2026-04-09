@@ -78,9 +78,17 @@ elif [ "$NAO_CONTEXT_SOURCE" = "local" ]; then
     
     echo "✓ Local context validated"
 
+elif [ "$NAO_CONTEXT_SOURCE" = "api" ]; then
+    echo ""
+    echo "=== API Context Mode ==="
+    echo "Context will be deployed via nao deploy CLI command."
+    mkdir -p "${NAO_PROJECTS_DIR:-/app/projects}"
+    export NAO_PROJECTS_DIR="${NAO_PROJECTS_DIR:-/app/projects}"
+    unset NAO_DEFAULT_PROJECT_PATH
+
 else
     echo "ERROR: Unknown NAO_CONTEXT_SOURCE: $NAO_CONTEXT_SOURCE"
-    echo "Must be 'local' or 'git'"
+    echo "Must be 'local', 'git', or 'api'"
     exit 1
 fi
 
