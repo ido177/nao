@@ -42,9 +42,6 @@ export type NewOrganization = typeof sqliteSchema.organization.$inferInsert;
 export type DBOrgMember = typeof sqliteSchema.orgMember.$inferSelect;
 export type NewOrgMember = typeof sqliteSchema.orgMember.$inferInsert;
 
-export type DBOrgInvite = typeof sqliteSchema.orgInvite.$inferSelect;
-export type NewOrgInvite = typeof sqliteSchema.orgInvite.$inferInsert;
-
 export type DBProjectSavedPrompt = typeof sqliteSchema.projectSavedPrompt.$inferSelect;
 export type NewProjectSavedPrompt = typeof sqliteSchema.projectSavedPrompt.$inferInsert;
 

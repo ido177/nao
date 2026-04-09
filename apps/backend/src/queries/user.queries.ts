@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { count, eq } from 'drizzle-orm';
 
-import s, { NewAccount, NewProjectMember, NewUser, User } from '../db/abstractSchema';
+import s, { NewAccount, NewUser, User } from '../db/abstractSchema';
 import { db } from '../db/db';
 import { takeFirstOrThrow } from '../utils/queries';
 
@@ -59,13 +59,11 @@ export const regenerateMessagingProviderCode = async (userId: string): Promise<s
 	return code;
 };
 
-export const create = async (user: NewUser, account: NewAccount, member: NewProjectMember): Promise<User> => {
+export const create = async (user: NewUser, account: NewAccount): Promise<User> => {
 	return await db.transaction(async (tx) => {
 		user.messagingProviderCode = createMessagingProviderCode();
 		const [created] = await tx.insert(s.user).values(user).returning().execute();
 		await tx.insert(s.account).values(account).execute();
-		member.userId = created.id;
-		await tx.insert(s.projectMember).values(member).execute();
 		return created;
 	});
 };

@@ -19,16 +19,18 @@ export function buildSharedItemEmail(
 	return { subject, html };
 }
 
-export function buildUserAddedToProjectEmail(
+export function buildUserAddedEmail(
 	user: { name: string; email: string },
-	projectName: string,
+	teamName: string,
+	teamLabel: 'project' | 'organization',
 	temporaryPassword?: string,
 ): CreatedEmail {
-	const subject = `You've been added to ${projectName} on nao`;
+	const subject = `You've been added to ${teamName} on nao`;
 	const html = renderToString(
 		UserAddedToProject({
 			userName: user.name,
-			projectName,
+			teamName,
+			teamLabel,
 			loginUrl: env.BETTER_AUTH_URL,
 			to: user.email,
 			temporaryPassword,

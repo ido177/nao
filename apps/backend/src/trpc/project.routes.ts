@@ -22,13 +22,21 @@ import { llmConfigSchema, llmProviderSchema } from '../types/llm';
 import { isValidIsoDateString } from '../utils/date';
 import { getEnvApiKey, getEnvBaseUrls, getEnvProviders, getProjectAvailableModels } from '../utils/llm';
 import { buildCredentialPreviews } from '../utils/utils';
-import { adminProtectedProcedure, projectProtectedProcedure, publicProcedure } from './trpc';
+import { adminProtectedProcedure, projectProtectedProcedure, protectedProcedure, publicProcedure } from './trpc';
 
 const isoDateString = z.string().refine(isValidIsoDateString, {
 	message: 'Must be a valid YYYY-MM-DD date',
 });
 
 export const projectRoutes = {
+	listForCurrentUser: protectedProcedure.query(async ({ ctx }) => {
+		const projects = await projectQueries.listUserProjectsWithRoles(ctx.user.id);
+		return projects.map(({ project, userRole }) => ({
+			...project,
+			userRole,
+		}));
+	}),
+
 	getCurrent: projectProtectedProcedure.query(({ ctx }) => {
 		if (!ctx.project) {
 			return null;

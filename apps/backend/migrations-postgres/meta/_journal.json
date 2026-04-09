@@ -253,6 +253,13 @@
       "when": 1775716561213,
       "tag": "0035_api_key_org_invite",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1775754358850,
+      "tag": "0036_drop_org_invite",
+      "breakpoints": true
     }
   ]
 }

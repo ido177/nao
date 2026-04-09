@@ -136,27 +136,6 @@ export const orgMember = sqliteTable(
 	(t) => [primaryKey({ columns: [t.orgId, t.userId] }), index('org_member_userId_idx').on(t.userId)],
 );
 
-export const orgInvite = sqliteTable(
-	'org_invite',
-	{
-		id: text('id')
-			.$defaultFn(() => crypto.randomUUID())
-			.primaryKey(),
-		orgId: text('org_id')
-			.notNull()
-			.references(() => organization.id, { onDelete: 'cascade' }),
-		email: text('email').notNull(),
-		role: text('role', { enum: ORG_ROLES }).notNull(),
-		invitedBy: text('invited_by')
-			.notNull()
-			.references(() => user.id, { onDelete: 'cascade' }),
-		createdAt: integer('created_at', { mode: 'timestamp_ms' })
-			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-			.notNull(),
-	},
-	(t) => [unique().on(t.orgId, t.email), index('org_invite_email_idx').on(t.email)],
-);
-
 export const project = sqliteTable(
 	'project',
 	{

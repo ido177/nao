@@ -9,6 +9,11 @@ import { env } from '../env';
 import type { ListProjectChatsResponse, ProjectChatsFacetKey, UserWithRole } from '../types/project';
 import { HandlerError } from '../utils/error';
 
+export interface UserProjectWithRole {
+	project: DBProject;
+	userRole: UserRole;
+}
+
 export const getProjectByPath = async (path: string): Promise<DBProject | null> => {
 	const [project] = await db.select().from(s.project).where(eq(s.project.path, path)).execute();
 	return project ?? null;
@@ -79,13 +84,23 @@ export const updateProjectMemberRole = async (projectId: string, userId: string,
 		.execute();
 };
 
-export const listUserProjects = async (userId: string): Promise<DBProject[]> => {
+export const listUserProjectsWithRoles = async (userId: string): Promise<UserProjectWithRole[]> => {
 	const results = await db
-		.select({ project: s.project })
-		.from(s.projectMember)
-		.innerJoin(s.project, eq(s.projectMember.projectId, s.project.id))
-		.where(eq(s.projectMember.userId, userId))
+		.select({
+			project: s.project,
+			userRole: sql<UserRole>`coalesce(${s.projectMember.role}, 'viewer')`,
+		})
+		.from(s.project)
+		.leftJoin(s.projectMember, and(eq(s.projectMember.projectId, s.project.id), eq(s.projectMember.userId, userId)))
+		.leftJoin(s.orgMember, and(eq(s.orgMember.orgId, s.project.orgId), eq(s.orgMember.userId, userId)))
+		.where(or(eq(s.projectMember.userId, userId), eq(s.orgMember.userId, userId)))
+		.orderBy(asc(s.project.name))
 		.execute();
+	return results;
+};
+
+export const listUserProjects = async (userId: string): Promise<DBProject[]> => {
+	const results = await listUserProjectsWithRoles(userId);
 	return results.map((r) => r.project);
 };
 
@@ -94,7 +109,23 @@ export const getUserRoleInProject = async (
 	userId: string,
 ): Promise<'admin' | 'user' | 'viewer' | null> => {
 	const member = await getProjectMember(projectId, userId);
-	return member?.role ?? null;
+	if (member) {
+		return member.role;
+	}
+
+	const project = await getProjectById(projectId);
+	if (!project?.orgId) {
+		return null;
+	}
+
+	const [orgMember] = await db
+		.select({ userId: s.orgMember.userId })
+		.from(s.orgMember)
+		.where(and(eq(s.orgMember.orgId, project.orgId), eq(s.orgMember.userId, userId)))
+		.limit(1)
+		.execute();
+
+	return orgMember ? 'viewer' : null;
 };
 
 export const getAllUsersWithRoles = async (projectId: string): Promise<UserWithRole[]> => {
@@ -124,9 +155,19 @@ export const getDefaultProject = async (): Promise<DBProject | null> => {
 	return project ?? null;
 };
 
-export const getProjectByUserId = async (userId: string): Promise<DBProject | null> => {
+export const getProjectByUserId = async (
+	userId: string,
+	selectedProjectId?: string | null,
+): Promise<DBProject | null> => {
 	if (env.NAO_MODE === 'cloud') {
 		const projects = await listUserProjects(userId);
+		if (selectedProjectId) {
+			const selectedProject = projects.find((project) => project.id === selectedProjectId);
+			if (selectedProject) {
+				return selectedProject;
+			}
+		}
+
 		return projects[0] ?? null;
 	}
 

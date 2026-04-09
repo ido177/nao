@@ -1,195 +1,219 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, KeyRound, Plus, Trash2 } from 'lucide-react';
+import { Check, Copy, KeyRound, Trash2 } from 'lucide-react';
+
+import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
+import { trpc } from '@/main';
 import { Button } from '@/components/ui/button';
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { SettingsCard } from '@/components/ui/settings-card';
-import { Empty } from '@/components/ui/empty';
-import { trpc } from '@/main';
 
-export function OrgApiKeys({ isAdmin }: { isAdmin: boolean }) {
-	const [showCreate, setShowCreate] = useState(false);
-	const [newKeyName, setNewKeyName] = useState('');
-	const [createdKey, setCreatedKey] = useState<string | null>(null);
-	const [copied, setCopied] = useState(false);
-	const [revokeId, setRevokeId] = useState<string | null>(null);
+interface OrgApiKeysProps {
+	isAdmin?: boolean;
+	deployUrl?: string;
+	title?: string;
+	description?: string;
+}
 
+export function OrgApiKeys({
+	isAdmin = false,
+	deployUrl,
+	title = 'Organization API Keys',
+	description = 'Generate organization-scoped API keys for actions like deploying a project from the nao CLI.',
+}: OrgApiKeysProps) {
 	const queryClient = useQueryClient();
-	const keys = useQuery(trpc.apiKey.list.queryOptions());
+	const [name, setName] = useState('Deploy key');
+	const [latestPlaintextKey, setLatestPlaintextKey] = useState<string | null>(null);
+	const { isCopied: isKeyCopied, copy: copyKey } = useCopyToClipboard();
+	const { isCopied: isCommandCopied, copy: copyCommand } = useCopyToClipboard();
 
-	const createMutation = useMutation(
+	const apiKeys = useQuery({
+		...trpc.apiKey.list.queryOptions(),
+		enabled: isAdmin,
+	});
+
+	const createApiKey = useMutation(
 		trpc.apiKey.create.mutationOptions({
-			onSuccess: (data) => {
-				setCreatedKey(data.plaintext);
-				setNewKeyName('');
-				queryClient.invalidateQueries({ queryKey: trpc.apiKey.list.queryKey() });
+			onSuccess: async (result) => {
+				setLatestPlaintextKey(result.plaintext);
+				setName('Deploy key');
+				await queryClient.invalidateQueries({ queryKey: trpc.apiKey.list.queryOptions().queryKey });
 			},
 		}),
 	);
 
-	const revokeMutation = useMutation(
+	const revokeApiKey = useMutation(
 		trpc.apiKey.revoke.mutationOptions({
-			onSuccess: () => {
-				setRevokeId(null);
-				queryClient.invalidateQueries({ queryKey: trpc.apiKey.list.queryKey() });
+			onSuccess: async () => {
+				await queryClient.invalidateQueries({ queryKey: trpc.apiKey.list.queryOptions().queryKey });
 			},
 		}),
 	);
 
-	const handleCreate = () => {
-		if (!newKeyName.trim()) {
+	const deployCommand = useMemo(() => {
+		if (!deployUrl) {
+			return null;
+		}
+
+		return `nao deploy ${deployUrl} --api-key ${latestPlaintextKey ?? '<your-api-key>'}`;
+	}, [deployUrl, latestPlaintextKey]);
+
+	if (!isAdmin) {
+		return null;
+	}
+
+	const handleCreate = async () => {
+		const trimmedName = name.trim();
+		if (!trimmedName) {
 			return;
 		}
-		createMutation.mutate({ name: newKeyName.trim() });
-	};
 
-	const handleCopy = async (text: string) => {
-		await navigator.clipboard.writeText(text);
-		setCopied(true);
-		setTimeout(() => setCopied(false), 2000);
-	};
-
-	const handleCloseCreated = () => {
-		setCreatedKey(null);
-		setShowCreate(false);
+		await createApiKey.mutateAsync({ name: trimmedName });
 	};
 
 	return (
-		<>
-			<SettingsCard
-				title='API Keys'
-				description='API keys allow the nao CLI to deploy project context to this instance.'
-				divide
-				action={
-					isAdmin ? (
-						<Button variant='secondary' size='sm' onClick={() => setShowCreate(true)}>
-							<Plus className='size-4' />
-							Generate Key
+		<SettingsCard title={title} description={description}>
+			<div className='flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/30 p-4'>
+				<div className='flex items-start gap-3'>
+					<div className='flex size-9 items-center justify-center rounded-md bg-background text-muted-foreground'>
+						<KeyRound className='size-4' />
+					</div>
+					<div className='min-w-0 flex-1 space-y-1'>
+						<div className='text-sm font-medium text-foreground'>Generate a deploy key</div>
+						<p className='text-sm text-muted-foreground'>
+							Create an API key for your organization, then use it with <code>nao deploy</code> to upload
+							a project context.
+						</p>
+					</div>
+				</div>
+
+				<div className='flex flex-col gap-2 sm:flex-row'>
+					<Input
+						value={name}
+						onChange={(event) => setName(event.target.value)}
+						placeholder='Deploy key'
+						aria-label='API key name'
+					/>
+					<Button
+						onClick={() => handleCreate().catch(console.error)}
+						disabled={!name.trim()}
+						isLoading={createApiKey.isPending}
+					>
+						Generate API key
+					</Button>
+				</div>
+			</div>
+
+			{latestPlaintextKey && (
+				<div className='flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20'>
+					<div className='flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
+						<div className='space-y-1'>
+							<div className='text-sm font-medium text-foreground'>New API key</div>
+							<p className='text-sm text-muted-foreground'>
+								Copy it now. This is the only time the full key will be shown.
+							</p>
+						</div>
+						<Button
+							variant='outline'
+							size='sm'
+							onClick={() => copyKey(latestPlaintextKey).catch(console.error)}
+						>
+							{isKeyCopied ? (
+								<Check className='size-3.5 text-green-500' />
+							) : (
+								<Copy className='size-3.5' />
+							)}
+							{isKeyCopied ? 'Copied' : 'Copy key'}
 						</Button>
-					) : undefined
-				}
-			>
-				{keys.data?.length ? (
-					<div className='divide-y divide-border'>
-						{keys.data.map((key) => (
-							<div key={key.id} className='flex items-center justify-between py-3 px-1'>
-								<div className='flex items-center gap-3 min-w-0'>
-									<KeyRound className='size-4 text-muted-foreground shrink-0' />
-									<div className='min-w-0'>
-										<p className='text-sm font-medium truncate'>{key.name}</p>
-										<p className='text-xs text-muted-foreground'>
-											{key.keyPrefix}...
-											{' · '}
-											Created {new Date(key.createdAt).toLocaleDateString()}
-											{key.lastUsedAt && (
-												<>
-													{' · '}
-													Last used {new Date(key.lastUsedAt).toLocaleDateString()}
-												</>
-											)}
-										</p>
+					</div>
+
+					<code className='overflow-x-auto rounded-md border bg-background px-3 py-2 text-xs font-mono break-all'>
+						{latestPlaintextKey}
+					</code>
+				</div>
+			)}
+
+			{deployCommand && (
+				<div className='flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/30 p-4'>
+					<div className='flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
+						<div className='space-y-1'>
+							<div className='text-sm font-medium text-foreground'>Deploy command</div>
+							<p className='text-sm text-muted-foreground'>
+								Run this from the folder that contains <code>nao_config.yaml</code>. If the project
+								lives somewhere else, add <code>--path /path/to/project</code>.
+							</p>
+						</div>
+						<Button
+							variant='outline'
+							size='sm'
+							onClick={() => copyCommand(deployCommand).catch(console.error)}
+						>
+							{isCommandCopied ? (
+								<Check className='size-3.5 text-green-500' />
+							) : (
+								<Copy className='size-3.5' />
+							)}
+							{isCommandCopied ? 'Copied' : 'Copy command'}
+						</Button>
+					</div>
+
+					<code className='overflow-x-auto rounded-md border bg-background px-3 py-2 text-xs font-mono whitespace-pre'>
+						{deployCommand}
+					</code>
+
+					<p className='text-sm text-muted-foreground'>
+						<code>nao deploy</code> packages the current project directory, uploads it to this nao instance,
+						and creates or updates the cloud project that matches <code>project_name</code> in{' '}
+						<code>nao_config.yaml</code>.
+					</p>
+				</div>
+			)}
+
+			<div className='space-y-3'>
+				<div className='text-sm font-medium text-foreground'>Existing keys</div>
+				{apiKeys.isLoading ? (
+					<div className='text-sm text-muted-foreground'>Loading API keys...</div>
+				) : apiKeys.data?.length ? (
+					<div className='space-y-2'>
+						{apiKeys.data.map((apiKey) => (
+							<div
+								key={apiKey.id}
+								className='flex flex-col gap-3 rounded-lg border border-border/60 bg-background p-3 sm:flex-row sm:items-center sm:justify-between'
+							>
+								<div className='min-w-0 space-y-1'>
+									<div className='text-sm font-medium text-foreground'>{apiKey.name}</div>
+									<div className='text-xs font-mono text-muted-foreground'>{apiKey.keyPrefix}</div>
+									<div className='text-xs text-muted-foreground'>
+										Created {formatDate(apiKey.createdAt)}
+										{apiKey.lastUsedAt
+											? ` • Last used ${formatDate(apiKey.lastUsedAt)}`
+											: ' • Never used'}
 									</div>
 								</div>
-								{isAdmin && (
-									<Button
-										variant='ghost'
-										size='sm'
-										className='text-destructive hover:text-destructive shrink-0'
-										onClick={() => setRevokeId(key.id)}
-									>
-										<Trash2 className='size-4' />
-									</Button>
-								)}
+								<Button
+									variant='outline'
+									size='sm'
+									onClick={() => revokeApiKey.mutate({ id: apiKey.id })}
+									disabled={revokeApiKey.isPending}
+								>
+									<Trash2 className='size-3.5' />
+									Revoke
+								</Button>
 							</div>
 						))}
 					</div>
 				) : (
-					<Empty>No API keys yet. Generate one to use with nao deploy.</Empty>
+					<div className='text-sm text-muted-foreground'>No API keys created yet.</div>
 				)}
-			</SettingsCard>
-
-			<Dialog open={showCreate && !createdKey} onOpenChange={(open) => !open && setShowCreate(false)}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Generate API Key</DialogTitle>
-						<DialogDescription>Give this key a name to help you identify it later.</DialogDescription>
-					</DialogHeader>
-					<Input
-						placeholder='e.g. CI/CD Pipeline'
-						value={newKeyName}
-						onChange={(e) => setNewKeyName(e.target.value)}
-						onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-						autoFocus
-					/>
-					<DialogFooter>
-						<DialogClose asChild>
-							<Button variant='outline'>Cancel</Button>
-						</DialogClose>
-						<Button onClick={handleCreate} disabled={!newKeyName.trim() || createMutation.isPending}>
-							{createMutation.isPending ? 'Generating...' : 'Generate'}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-
-			<Dialog open={!!createdKey} onOpenChange={(open) => !open && handleCloseCreated()}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>API Key Created</DialogTitle>
-						<DialogDescription>Copy this key now. You won't be able to see it again.</DialogDescription>
-					</DialogHeader>
-					<div className='flex items-center gap-2'>
-						<code className='flex-1 bg-muted px-3 py-2 rounded text-sm font-mono break-all'>
-							{createdKey}
-						</code>
-						<Button variant='outline' size='sm' onClick={() => createdKey && handleCopy(createdKey)}>
-							<Copy className='size-4' />
-							{copied ? 'Copied!' : 'Copy'}
-						</Button>
-					</div>
-					<p className='text-xs text-muted-foreground'>
-						Use this key with:{' '}
-						<code className='text-xs'>
-							nao deploy --url https://your-instance --api-key {createdKey?.slice(0, 12)}...
-						</code>
-					</p>
-					<DialogFooter>
-						<Button onClick={handleCloseCreated}>Done</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-
-			<Dialog open={!!revokeId} onOpenChange={(open) => !open && setRevokeId(null)}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Revoke API Key</DialogTitle>
-						<DialogDescription>
-							This action cannot be undone. Any deployments using this key will stop working.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<DialogClose asChild>
-							<Button variant='outline'>Cancel</Button>
-						</DialogClose>
-						<Button
-							variant='destructive'
-							onClick={() => revokeId && revokeMutation.mutate({ id: revokeId })}
-							disabled={revokeMutation.isPending}
-						>
-							{revokeMutation.isPending ? 'Revoking...' : 'Revoke Key'}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		</>
+			</div>
+		</SettingsCard>
 	);
+}
+
+function formatDate(timestamp: number | null) {
+	if (!timestamp) {
+		return 'never';
+	}
+
+	return new Date(timestamp).toLocaleString();
 }

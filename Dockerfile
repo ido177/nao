@@ -94,8 +94,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Create non-root user and required directories
 RUN useradd -m -s /bin/bash nao \
-    && mkdir -p /var/log/supervisor /app/context \
-    && chown nao:nao /var/log/supervisor /app /app/context
+    && mkdir -p /var/log/supervisor /app/context /app/projects \
+    && chown nao:nao /var/log/supervisor /app /app/context /app/projects
 
 WORKDIR /app
 
