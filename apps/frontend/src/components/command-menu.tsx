@@ -1,16 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import {
-	CodeIcon,
-	CreditCardIcon,
-	MessageSquareIcon,
-	MessageSquarePlusIcon,
-	MoonIcon,
-	SettingsIcon,
-	SunIcon,
-	UserIcon,
-} from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { MessageSquareIcon, MessageSquarePlusIcon, MoonIcon, SunIcon, UserIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import {
@@ -24,7 +14,6 @@ import {
 } from '@/components/ui/command';
 import { useTheme } from '@/contexts/theme.provider';
 import { useRegisterCommandMenuCallback } from '@/contexts/command-menu-callback';
-import { trpc } from '@/main';
 import { useSearchChatsQuery } from '@/queries/use-search-chats-query';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { TextShimmer } from '@/components/ui/text-shimmer';
