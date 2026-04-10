@@ -26,6 +26,7 @@ import {
 } from '@/lib/ai';
 import { useSetChatList } from '@/queries/use-chat-list-query';
 import { createLocalStorage } from '@/lib/local-storage';
+import { getActiveProjectId } from '@/lib/active-project';
 
 export interface AgentHelpers {
 	chatId: string | undefined;
@@ -126,6 +127,7 @@ export const useAgent = ({ disableNavigation = false }: { disableNavigation?: bo
 					mentionsRef.current = [];
 					const images = extractImagesFromMessage(messageToSend);
 					return {
+						headers: getActiveProjectId() ? { 'x-nao-project-id': getActiveProjectId()! } : undefined,
 						body: {
 							...body,
 							chatId: agentId === NEW_CHAT_ID ? undefined : agentId,
