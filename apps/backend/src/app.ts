@@ -9,7 +9,7 @@ import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
-import { env } from './env';
+import { env, isCloud } from './env';
 import { ensureOrganizationSetup } from './queries/organization.queries';
 import { agentRoutes } from './routes/agent';
 import { authRoutes } from './routes/auth';
@@ -212,7 +212,7 @@ if (staticRoot) {
 }
 
 export const startServer = async (opts: { port: number; host: string }) => {
-	if (env.NAO_MODE === 'cloud') {
+	if (isCloud) {
 		// TODO: Implement cloud mode
 	} else {
 		await ensureOrganizationSetup();

@@ -221,14 +221,6 @@ export function Sidebar() {
 						/>
 					</>
 				)}
-
-				{!effectiveIsCollapsed && project.data && (projects.data?.length ?? 0) > 1 && (
-					<ProjectSelector
-						projects={projects.data ?? []}
-						currentProjectId={project.data.id}
-						onChange={handleProjectChange}
-					/>
-				)}
 			</div>
 
 			{isInSettings ? (
@@ -239,6 +231,13 @@ export function Sidebar() {
 
 			<div className={cn('mt-auto transition-[padding] duration-300', effectiveIsCollapsed ? 'p-1' : 'p-2')}>
 				{isInSettings && <SidebarCommunity isCollapsed={effectiveIsCollapsed} />}
+				{!effectiveIsCollapsed && project.data && (projects.data?.length ?? 0) > 1 && (
+					<ProjectSelector
+						projects={projects.data ?? []}
+						currentProjectId={project.data.id}
+						onChange={handleProjectChange}
+					/>
+				)}
 				<SidebarUserMenu isCollapsed={effectiveIsCollapsed} />
 			</div>
 		</div>

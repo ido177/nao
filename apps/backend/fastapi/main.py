@@ -222,7 +222,6 @@ async def execute_sql(request: ExecuteSQLRequest):
     try:
         # Load the nao config from the project folder
         project_path = Path(request.nao_project_folder)
-        os.chdir(project_path)
         config = NaoConfig.try_load(project_path, raise_on_error=True)
         assert config is not None
 
@@ -272,7 +271,7 @@ async def execute_sql(request: ExecuteSQLRequest):
             data=data,
             row_count=len(data),
             columns=[str(c) for c in df.columns.tolist()],
-            dialect=db_config.type, 
+            dialect=db_config.type,
         )
     except HTTPException:
         raise
@@ -283,7 +282,4 @@ async def execute_sql(request: ExecuteSQLRequest):
 
 
 if __name__ == "__main__":
-    nao_project_folder = os.getenv("NAO_DEFAULT_PROJECT_PATH")
-    if nao_project_folder:
-        os.chdir(nao_project_folder)
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

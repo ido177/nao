@@ -285,7 +285,7 @@ class NaoConfig(BaseModel):
     @classmethod
     def try_load(
         cls,
-        path: Path | None = None,
+        path: Path,
         *,
         exit_on_error: bool = False,
         raise_on_error: bool = False,
@@ -293,16 +293,12 @@ class NaoConfig(BaseModel):
         """Try to load config from path.
 
         Args:
-            path: Directory containing nao_config.yaml. Defaults to NAO_DEFAULT_PROJECT_PATH
-                  environment variable if set, otherwise current directory.
+            path: Directory containing nao_config.yaml.
             exit_on_error: If True, prints error message and calls sys.exit(1) on failure.
             raise_on_error: If True, raises NaoConfigError on failure.
         Returns:
             NaoConfig if loaded successfully, None if failed and both flags are False.
         """
-        if path is None:
-            default_path = os.environ.get("NAO_DEFAULT_PROJECT_PATH")
-            path = Path(default_path) if default_path else Path.cwd()
 
         config_file = path / "nao_config.yaml"
 
@@ -366,3 +362,8 @@ class NaoConfig(BaseModel):
 
         processed = regex.sub(replacer, content)
         return processed, env_vars
+
+
+def resolve_project_path() -> Path:
+    """Resolve the nao project directory from the current working directory."""
+    return Path.cwd()

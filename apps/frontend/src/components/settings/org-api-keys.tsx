@@ -18,7 +18,7 @@ interface OrgApiKeysProps {
 export function OrgApiKeys({
 	isAdmin = false,
 	deployUrl,
-	title = 'Organization API Keys',
+	title = 'Organization API keys',
 	description = 'Generate organization-scoped API keys for actions like deploying a project from the nao CLI.',
 }: OrgApiKeysProps) {
 	const queryClient = useQueryClient();
@@ -81,8 +81,8 @@ export function OrgApiKeys({
 					<div className='min-w-0 flex-1 space-y-1'>
 						<div className='text-sm font-medium text-foreground'>Generate a deploy key</div>
 						<p className='text-sm text-muted-foreground'>
-							Create an API key for your organization, then use it with <code>nao deploy</code> to upload
-							a project context.
+							Create an API key for your organization, then use it with{' '}
+							<code className='dollar'>nao deploy</code> to upload a project context.
 						</p>
 					</div>
 				</div>
@@ -181,8 +181,12 @@ export function OrgApiKeys({
 								className='flex flex-col gap-3 rounded-lg border border-border/60 bg-background p-3 sm:flex-row sm:items-center sm:justify-between'
 							>
 								<div className='min-w-0 space-y-1'>
-									<div className='text-sm font-medium text-foreground'>{apiKey.name}</div>
-									<div className='text-xs font-mono text-muted-foreground'>{apiKey.keyPrefix}</div>
+									<div className='text-sm font-medium text-foreground'>
+										{apiKey.name}{' '}
+										<span className='text-xs font-mono text-muted-foreground'>
+											{apiKey.keyPrefix}...
+										</span>
+									</div>
 									<div className='text-xs text-muted-foreground'>
 										Created {formatDate(apiKey.createdAt)}
 										{apiKey.lastUsedAt

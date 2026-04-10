@@ -3,6 +3,7 @@ import { z } from 'zod/v4';
 
 import { executeQuery } from '../agents/tools/execute-sql';
 import type { App } from '../app';
+import { noProjectMessage } from '../env';
 import { authMiddleware } from '../middleware/auth';
 import { retrieveProjectById } from '../queries/project.queries';
 import { TestAgentService, testAgentService } from '../services/test-agent.service';
@@ -31,9 +32,7 @@ export const testRoutes = async (app: App) => {
 			const { prompt, model, sql } = request.body;
 
 			if (!projectId) {
-				return reply
-					.status(400)
-					.send({ error: 'No project configured. Set NAO_DEFAULT_PROJECT_PATH environment variable.' });
+				return reply.status(400).send({ error: noProjectMessage() });
 			}
 
 			try {

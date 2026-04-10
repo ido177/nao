@@ -4,7 +4,7 @@ from typing import Tuple
 from rich.console import Console
 from rich.table import Table
 
-from nao_core.config import NaoConfig
+from nao_core.config import NaoConfig, resolve_project_path
 from nao_core.tracking import track_command
 
 console = Console()
@@ -137,7 +137,7 @@ def debug():
     console.print("\n[bold cyan]🔍 nao debug - Testing connections...[/bold cyan]\n")
 
     # Load config
-    config = NaoConfig.try_load(exit_on_error=True)
+    config = NaoConfig.try_load(resolve_project_path(), exit_on_error=True)
     assert config is not None  # Help type checker after exit_on_error=True
 
     console.print(f"[bold green]✓[/bold green] Loaded config: [cyan]{config.project_name}[/cyan]\n")

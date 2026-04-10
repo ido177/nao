@@ -25,9 +25,9 @@ import { Route as SidebarLayoutSettingsProjectRouteImport } from './routes/_side
 import { Route as SidebarLayoutSettingsOrganizationRouteImport } from './routes/_sidebar-layout.settings.organization'
 import { Route as SidebarLayoutSettingsMemoryRouteImport } from './routes/_sidebar-layout.settings.memory'
 import { Route as SidebarLayoutSettingsLogsRouteImport } from './routes/_sidebar-layout.settings.logs'
-import { Route as SidebarLayoutSettingsGeneralRouteImport } from './routes/_sidebar-layout.settings.general'
 import { Route as SidebarLayoutSettingsContextExplorerRouteImport } from './routes/_sidebar-layout.settings.context-explorer'
 import { Route as SidebarLayoutSettingsChatsReplayRouteImport } from './routes/_sidebar-layout.settings.chats-replay'
+import { Route as SidebarLayoutSettingsAccountRouteImport } from './routes/_sidebar-layout.settings.account'
 import { Route as SidebarLayoutChatLayoutChatIdRouteImport } from './routes/_sidebar-layout._chat-layout.$chatId'
 import { Route as SidebarLayoutSettingsProjectIndexRouteImport } from './routes/_sidebar-layout.settings.project.index'
 import { Route as SidebarLayoutStoriesSharedShareIdRouteImport } from './routes/_sidebar-layout.stories.shared.$shareId'
@@ -128,12 +128,6 @@ const SidebarLayoutSettingsLogsRoute =
     path: '/logs',
     getParentRoute: () => SidebarLayoutSettingsRoute,
   } as any)
-const SidebarLayoutSettingsGeneralRoute =
-  SidebarLayoutSettingsGeneralRouteImport.update({
-    id: '/general',
-    path: '/general',
-    getParentRoute: () => SidebarLayoutSettingsRoute,
-  } as any)
 const SidebarLayoutSettingsContextExplorerRoute =
   SidebarLayoutSettingsContextExplorerRouteImport.update({
     id: '/context-explorer',
@@ -144,6 +138,12 @@ const SidebarLayoutSettingsChatsReplayRoute =
   SidebarLayoutSettingsChatsReplayRouteImport.update({
     id: '/chats-replay',
     path: '/chats-replay',
+    getParentRoute: () => SidebarLayoutSettingsRoute,
+  } as any)
+const SidebarLayoutSettingsAccountRoute =
+  SidebarLayoutSettingsAccountRouteImport.update({
+    id: '/account',
+    path: '/account',
     getParentRoute: () => SidebarLayoutSettingsRoute,
   } as any)
 const SidebarLayoutChatLayoutChatIdRoute =
@@ -227,9 +227,9 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/settings': typeof SidebarLayoutSettingsRouteWithChildren
   '/$chatId': typeof SidebarLayoutChatLayoutChatIdRoute
+  '/settings/account': typeof SidebarLayoutSettingsAccountRoute
   '/settings/chats-replay': typeof SidebarLayoutSettingsChatsReplayRoute
   '/settings/context-explorer': typeof SidebarLayoutSettingsContextExplorerRoute
-  '/settings/general': typeof SidebarLayoutSettingsGeneralRoute
   '/settings/logs': typeof SidebarLayoutSettingsLogsRoute
   '/settings/memory': typeof SidebarLayoutSettingsMemoryRoute
   '/settings/organization': typeof SidebarLayoutSettingsOrganizationRoute
@@ -257,9 +257,9 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/$chatId': typeof SidebarLayoutChatLayoutChatIdRoute
+  '/settings/account': typeof SidebarLayoutSettingsAccountRoute
   '/settings/chats-replay': typeof SidebarLayoutSettingsChatsReplayRoute
   '/settings/context-explorer': typeof SidebarLayoutSettingsContextExplorerRoute
-  '/settings/general': typeof SidebarLayoutSettingsGeneralRoute
   '/settings/logs': typeof SidebarLayoutSettingsLogsRoute
   '/settings/memory': typeof SidebarLayoutSettingsMemoryRoute
   '/settings/organization': typeof SidebarLayoutSettingsOrganizationRoute
@@ -289,9 +289,9 @@ export interface FileRoutesById {
   '/_sidebar-layout/_chat-layout': typeof SidebarLayoutChatLayoutRouteWithChildren
   '/_sidebar-layout/settings': typeof SidebarLayoutSettingsRouteWithChildren
   '/_sidebar-layout/_chat-layout/$chatId': typeof SidebarLayoutChatLayoutChatIdRoute
+  '/_sidebar-layout/settings/account': typeof SidebarLayoutSettingsAccountRoute
   '/_sidebar-layout/settings/chats-replay': typeof SidebarLayoutSettingsChatsReplayRoute
   '/_sidebar-layout/settings/context-explorer': typeof SidebarLayoutSettingsContextExplorerRoute
-  '/_sidebar-layout/settings/general': typeof SidebarLayoutSettingsGeneralRoute
   '/_sidebar-layout/settings/logs': typeof SidebarLayoutSettingsLogsRoute
   '/_sidebar-layout/settings/memory': typeof SidebarLayoutSettingsMemoryRoute
   '/_sidebar-layout/settings/organization': typeof SidebarLayoutSettingsOrganizationRoute
@@ -323,9 +323,9 @@ export interface FileRouteTypes {
     | '/signup'
     | '/settings'
     | '/$chatId'
+    | '/settings/account'
     | '/settings/chats-replay'
     | '/settings/context-explorer'
-    | '/settings/general'
     | '/settings/logs'
     | '/settings/memory'
     | '/settings/organization'
@@ -353,9 +353,9 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/$chatId'
+    | '/settings/account'
     | '/settings/chats-replay'
     | '/settings/context-explorer'
-    | '/settings/general'
     | '/settings/logs'
     | '/settings/memory'
     | '/settings/organization'
@@ -384,9 +384,9 @@ export interface FileRouteTypes {
     | '/_sidebar-layout/_chat-layout'
     | '/_sidebar-layout/settings'
     | '/_sidebar-layout/_chat-layout/$chatId'
+    | '/_sidebar-layout/settings/account'
     | '/_sidebar-layout/settings/chats-replay'
     | '/_sidebar-layout/settings/context-explorer'
-    | '/_sidebar-layout/settings/general'
     | '/_sidebar-layout/settings/logs'
     | '/_sidebar-layout/settings/memory'
     | '/_sidebar-layout/settings/organization'
@@ -531,13 +531,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SidebarLayoutSettingsLogsRouteImport
       parentRoute: typeof SidebarLayoutSettingsRoute
     }
-    '/_sidebar-layout/settings/general': {
-      id: '/_sidebar-layout/settings/general'
-      path: '/general'
-      fullPath: '/settings/general'
-      preLoaderRoute: typeof SidebarLayoutSettingsGeneralRouteImport
-      parentRoute: typeof SidebarLayoutSettingsRoute
-    }
     '/_sidebar-layout/settings/context-explorer': {
       id: '/_sidebar-layout/settings/context-explorer'
       path: '/context-explorer'
@@ -550,6 +543,13 @@ declare module '@tanstack/react-router' {
       path: '/chats-replay'
       fullPath: '/settings/chats-replay'
       preLoaderRoute: typeof SidebarLayoutSettingsChatsReplayRouteImport
+      parentRoute: typeof SidebarLayoutSettingsRoute
+    }
+    '/_sidebar-layout/settings/account': {
+      id: '/_sidebar-layout/settings/account'
+      path: '/account'
+      fullPath: '/settings/account'
+      preLoaderRoute: typeof SidebarLayoutSettingsAccountRouteImport
       parentRoute: typeof SidebarLayoutSettingsRoute
     }
     '/_sidebar-layout/_chat-layout/$chatId': {
@@ -695,9 +695,9 @@ const SidebarLayoutSettingsProjectRouteWithChildren =
   )
 
 interface SidebarLayoutSettingsRouteChildren {
+  SidebarLayoutSettingsAccountRoute: typeof SidebarLayoutSettingsAccountRoute
   SidebarLayoutSettingsChatsReplayRoute: typeof SidebarLayoutSettingsChatsReplayRoute
   SidebarLayoutSettingsContextExplorerRoute: typeof SidebarLayoutSettingsContextExplorerRoute
-  SidebarLayoutSettingsGeneralRoute: typeof SidebarLayoutSettingsGeneralRoute
   SidebarLayoutSettingsLogsRoute: typeof SidebarLayoutSettingsLogsRoute
   SidebarLayoutSettingsMemoryRoute: typeof SidebarLayoutSettingsMemoryRoute
   SidebarLayoutSettingsOrganizationRoute: typeof SidebarLayoutSettingsOrganizationRoute
@@ -707,10 +707,10 @@ interface SidebarLayoutSettingsRouteChildren {
 }
 
 const SidebarLayoutSettingsRouteChildren: SidebarLayoutSettingsRouteChildren = {
+  SidebarLayoutSettingsAccountRoute: SidebarLayoutSettingsAccountRoute,
   SidebarLayoutSettingsChatsReplayRoute: SidebarLayoutSettingsChatsReplayRoute,
   SidebarLayoutSettingsContextExplorerRoute:
     SidebarLayoutSettingsContextExplorerRoute,
-  SidebarLayoutSettingsGeneralRoute: SidebarLayoutSettingsGeneralRoute,
   SidebarLayoutSettingsLogsRoute: SidebarLayoutSettingsLogsRoute,
   SidebarLayoutSettingsMemoryRoute: SidebarLayoutSettingsMemoryRoute,
   SidebarLayoutSettingsOrganizationRoute:

@@ -5,7 +5,7 @@ import type { AgentSettings, DBProject, DBProjectMember, NewProject, NewProjectM
 import s from '../db/abstractSchema';
 import { db } from '../db/db';
 import dbConfig, { Dialect } from '../db/dbConfig';
-import { env } from '../env';
+import { env, isCloud } from '../env';
 import type { ListProjectChatsResponse, ProjectChatsFacetKey, UserWithRole } from '../types/project';
 import { HandlerError } from '../utils/error';
 
@@ -159,7 +159,7 @@ export const getProjectByUserId = async (
 	userId: string,
 	selectedProjectId?: string | null,
 ): Promise<DBProject | null> => {
-	if (env.NAO_MODE === 'cloud') {
+	if (isCloud) {
 		const projects = await listUserProjects(userId);
 		if (selectedProjectId) {
 			const selectedProject = projects.find((project) => project.id === selectedProjectId);
@@ -167,26 +167,16 @@ export const getProjectByUserId = async (
 				return selectedProject;
 			}
 		}
-
 		return projects[0] ?? null;
 	}
 
-	const projectPath = env.NAO_DEFAULT_PROJECT_PATH;
-	if (!projectPath) {
-		return null;
-	}
-
-	const project = await getProjectByPath(projectPath);
+	const project = await getDefaultProject();
 	if (!project) {
 		return null;
 	}
 
-	const userProject = await getProjectMember(project.id, userId);
-	if (!userProject) {
-		return null;
-	}
-
-	return project;
+	const membership = await getProjectMember(project.id, userId);
+	return membership ? project : null;
 };
 
 export const checkProjectHasMoreThanOneAdmin = async (projectId: string): Promise<boolean> => {

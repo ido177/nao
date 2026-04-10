@@ -11,7 +11,7 @@ from cyclopts import Parameter
 from rich.console import Console
 
 from nao_core import __version__
-from nao_core.config import NaoConfig
+from nao_core.config import NaoConfig, resolve_project_path
 from nao_core.config.llm import PROVIDER_AUTH, LLMProvider
 from nao_core.mode import MODE
 from nao_core.tracking import track_command
@@ -177,7 +177,7 @@ def chat(
     """
     console.print("\n[bold cyan]💬 Starting nao chat...[/bold cyan]\n")
 
-    config = NaoConfig.try_load(exit_on_error=True)
+    config = NaoConfig.try_load(resolve_project_path(), exit_on_error=True)
     assert config is not None
     console.print(f"[bold green]✓[/bold green] Loaded config from {Path.cwd() / 'nao_config.yaml'}")
 

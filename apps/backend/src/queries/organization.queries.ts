@@ -126,8 +126,7 @@ export const initializeDefaultOrganizationForFirstUser = async (userId: string):
 		// Add user as org admin
 		await tx.insert(s.orgMember).values({ orgId: org.id, userId, role: 'admin' }).execute();
 
-		// Create default project if path is configured
-		const projectPath = process.env.NAO_DEFAULT_PROJECT_PATH;
+		const projectPath = env.NAO_DEFAULT_PROJECT_PATH;
 		if (projectPath) {
 			const [existingProject] = await tx
 				.select()
@@ -262,7 +261,6 @@ export interface OrgMemberWithUser {
 export interface OrgProjectWithAccess {
 	id: string;
 	name: string;
-	path: string | null;
 	role: OrgRole;
 	createdAt: Date;
 	updatedAt: Date;
@@ -288,7 +286,6 @@ export const getOrgProjectsWithAccess = async (orgId: string, userId: string): P
 		.select({
 			id: s.project.id,
 			name: s.project.name,
-			path: s.project.path,
 			role: sql<OrgRole>`coalesce(${s.projectMember.role}, 'viewer')`,
 			createdAt: s.project.createdAt,
 			updatedAt: s.project.updatedAt,

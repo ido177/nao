@@ -70,11 +70,10 @@ def deploy(
     ] = None,
 ) -> None:
     """Deploy project context to a remote nao instance."""
-    config = NaoConfig.try_load(path, exit_on_error=True)
+    project_path = path or Path.cwd()
+    config = NaoConfig.try_load(project_path, exit_on_error=True)
     if config is None:
         return
-
-    project_path = path or Path.cwd()
     project_name = config.project_name
 
     console.print(f"\n[bold]Deploying[/bold] [cyan]{project_name}[/cyan] to [cyan]{url}[/cyan]\n")

@@ -108,7 +108,6 @@ function OrganizationPage() {
 				<h1 className='text-lg font-semibold text-foreground'>{org.data?.name ?? 'Organization'}</h1>
 				<SettingsCard
 					title='Members'
-					description='Manage the members of your organization.'
 					divide
 					action={
 						isAdmin ? (
@@ -134,10 +133,7 @@ function OrganizationPage() {
 						/>
 					)}
 				</SettingsCard>
-				<SettingsCard
-					title='Projects'
-					description='See every project in your organization and the access you have to each one.'
-				>
+				<SettingsCard title='Projects'>
 					{projectsQuery.isLoading ? (
 						<div className='text-sm text-muted-foreground'>Loading projects...</div>
 					) : projectsQuery.data?.length ? (
@@ -145,7 +141,6 @@ function OrganizationPage() {
 							<TableHeader>
 								<TableRow>
 									<TableHead>Name</TableHead>
-									<TableHead>Path</TableHead>
 									<TableHead>Access</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -153,9 +148,6 @@ function OrganizationPage() {
 								{projectsQuery.data.map((project) => (
 									<TableRow key={project.id}>
 										<TableCell className='font-medium'>{project.name}</TableCell>
-										<TableCell className='font-mono text-muted-foreground'>
-											{project.path ?? 'No local path'}
-										</TableCell>
 										<TableCell>
 											<Badge variant={project.role}>{project.role}</Badge>
 										</TableCell>
