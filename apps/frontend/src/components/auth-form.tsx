@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { handleGithubSignIn, handleGoogleSignIn } from '@/lib/auth-client';
 import GithubIcon from '@/components/icons/github-icon.svg';
 import GoogleIcon from '@/components/icons/google-icon.svg';
-import NaoLogo from '@/components/icons/nao-logo-greyscale.svg';
+import NaoLogo from '@/components/icons/nao-full-logo.svg';
 
 interface AuthFormProps {
 	form: any;
@@ -14,16 +14,25 @@ interface AuthFormProps {
 	children: React.ReactNode;
 	serverError?: string;
 	displaySocialProviders?: boolean;
+	footer?: React.ReactNode;
 }
 
-export function AuthForm({ form, title, submitText, children, serverError, displaySocialProviders }: AuthFormProps) {
+export function AuthForm({
+	form,
+	title,
+	submitText,
+	children,
+	serverError,
+	displaySocialProviders,
+	footer,
+}: AuthFormProps) {
 	const isGoogleSetup = useQuery(trpc.authConfig.google.isSetup.queryOptions());
 	const isGithubSetup = useQuery(trpc.authConfig.github.isSetup.queryOptions());
 
 	return (
 		<div className='mx-auto w-full max-w-md p-8 my-auto'>
-			<div className='flex flex-col items-center mb-8'>
-				<NaoLogo className='w-12 h-12 mb-4' />
+			<div className='flex flex-col items-start mb-8'>
+				<NaoLogo className='w-24 h-24' />
 				<h1 className='text-2xl font-semibold'>{title}</h1>
 			</div>
 
@@ -84,6 +93,8 @@ export function AuthForm({ form, title, submitText, children, serverError, displ
 					</div>
 				</div>
 			)}
+
+			{footer && <div className='mt-6 text-center text-sm text-muted-foreground'>{footer}</div>}
 		</div>
 	);
 }

@@ -37,6 +37,18 @@ function Login() {
 			submitText='Log In'
 			serverError={serverError}
 			displaySocialProviders={true}
+			footer={
+				<>
+					Don&apos;t have an account?{' '}
+					<Link
+						to='/signup'
+						search={{ error: undefined }}
+						className='text-foreground underline underline-offset-4'
+					>
+						Sign up
+					</Link>
+				</>
+			}
 		>
 			<FormTextField form={form} name='email' type='email' placeholder='Email' />
 			<FormTextField form={form} name='password' type='password' placeholder='Password' />
