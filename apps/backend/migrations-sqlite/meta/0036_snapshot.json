@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "134c3492-76ab-4116-b81e-a77aee83af38",
-  "prevId": "9adf2593-1354-4c0a-bf38-9fa274658978",
+  "id": "f2d1ef93-6deb-43ba-b96e-cb4e686c2cd0",
+  "prevId": "5092a5ae-0f33-4168-a047-9086db973792",
   "tables": {
     "account": {
       "name": "account",
@@ -1581,6 +1581,14 @@
           "autoincrement": false,
           "default": "'[]'"
         },
+        "env_vars": {
+          "name": "env_vars",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'{}'"
+        },
         "slack_settings": {
           "name": "slack_settings",
           "type": "text",
@@ -1846,6 +1854,117 @@
       },
       "uniqueConstraints": {},
       "checkConstraints": {}
+    },
+    "project_provider_budget": {
+      "name": "project_provider_budget",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "limit_usd": {
+          "name": "limit_usd",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "period": {
+          "name": "period",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "current_period_start": {
+          "name": "current_period_start",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        },
+        "notified_at": {
+          "name": "notified_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        }
+      },
+      "indexes": {
+        "project_provider_budget_projectId_idx": {
+          "name": "project_provider_budget_projectId_idx",
+          "columns": [
+            "project_id"
+          ],
+          "isUnique": false
+        },
+        "project_provider_budget_project_provider": {
+          "name": "project_provider_budget_project_provider",
+          "columns": [
+            "project_id",
+            "provider"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "project_provider_budget_project_id_project_id_fk": {
+          "name": "project_provider_budget_project_id_project_id_fk",
+          "tableFrom": "project_provider_budget",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "budget_period_valid": {
+          "name": "budget_period_valid",
+          "value": "period IN ('day', 'week', 'month')"
+        }
+      }
     },
     "project_saved_prompt": {
       "name": "project_saved_prompt",
@@ -2719,6 +2838,13 @@
         },
         "messaging_provider_code": {
           "name": "messaging_provider_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "github_access_token": {
+          "name": "github_access_token",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

@@ -30,6 +30,8 @@ export const handleAgentRoute = async (opts: HandleAgentMessageInput): Promise<H
 		throw new HandlerError('BAD_REQUEST', noProjectMessage());
 	}
 
+	await agentService.assertBudget(projectId, model);
+
 	let chatId = opts.chatId;
 	const isNewChat = !chatId;
 	let newMessageId: string;
