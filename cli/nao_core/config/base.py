@@ -361,8 +361,6 @@ class NaoConfig(BaseModel):
         regex = re.compile(r"\$?\{\{\s*env\(['\"]([^'\"]+)['\"]\)\s*\}\}")
         env_vars: dict[str, str | None] = {}
 
-        print(f"extra_env: {extra_env}")
-
         def replacer(match: re.Match[str]) -> str:
             env_var = match.group(1)
             if extra_env is not None and env_var in extra_env:

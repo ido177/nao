@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Annotated
 
 import httpx
+import yaml
 from cyclopts import Parameter
 from rich.console import Console
 
-from nao_core.config import NaoConfig
 from nao_core.tracking import track_command
 
 console = Console()
@@ -60,6 +60,24 @@ def _build_tarball(project_path: Path, exclusions: set[str]) -> bytes:
     return buf.read()
 
 
+def _read_project_name(project_path: Path) -> str | None:
+    """Read project_name from nao_config.yaml without resolving env vars."""
+    config_file = project_path / "nao_config.yaml"
+    if not config_file.exists():
+        console.print("[bold red]✗[/bold red] No nao_config.yaml found in current directory")
+        return None
+    try:
+        data = yaml.safe_load(config_file.read_text())
+    except yaml.YAMLError as e:
+        console.print(f"[bold red]✗[/bold red] Failed to load nao_config.yaml: Invalid YAML syntax: {e}")
+        return None
+    name = data.get("project_name") if isinstance(data, dict) else None
+    if not name:
+        console.print("[bold red]✗[/bold red] nao_config.yaml is missing a 'project_name' field")
+        return None
+    return name
+
+
 @track_command("deploy")
 def deploy(
     url: Annotated[str, Parameter(help="Remote nao instance URL")],
@@ -71,10 +89,9 @@ def deploy(
 ) -> None:
     """Deploy project context to a remote nao instance."""
     project_path = path or Path.cwd()
-    config = NaoConfig.try_load(project_path, exit_on_error=True)
-    if config is None:
+    project_name = _read_project_name(project_path)
+    if project_name is None:
         return
-    project_name = config.project_name
 
     console.print(f"\n[bold]Deploying[/bold] [cyan]{project_name}[/cyan] to [cyan]{url}[/cyan]\n")
 
