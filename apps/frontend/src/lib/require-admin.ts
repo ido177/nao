@@ -7,3 +7,11 @@ export async function requireAdmin() {
 		throw redirect({ to: '/settings/account' });
 	}
 }
+
+export async function requireAdminNonCloud() {
+	await requireAdmin();
+	const config = await queryClient.ensureQueryData(trpc.system.getPublicConfig.queryOptions());
+	if (config.naoMode === 'cloud') {
+		throw redirect({ to: '/settings/account' });
+	}
+}

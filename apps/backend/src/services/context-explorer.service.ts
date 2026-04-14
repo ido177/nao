@@ -2,7 +2,7 @@ import type { FileTreeEntry } from '@nao/shared/types';
 import fs from 'fs/promises';
 import path from 'path';
 
-import { shouldExcludeEntry } from '../utils/tools';
+import { isExcludedEntry } from '../utils/tools';
 
 export async function getFileTree(projectFolder: string): Promise<FileTreeEntry[]> {
 	return readDirectoryRecursive(projectFolder, projectFolder);
@@ -21,10 +21,9 @@ export async function readFileContent(filePath: string, projectFolder: string): 
 }
 
 async function readDirectoryRecursive(dirPath: string, projectFolder: string): Promise<FileTreeEntry[]> {
-	const parentRelativePath = path.relative(projectFolder, dirPath);
 	const dirEntries = await fs.readdir(dirPath, { withFileTypes: true });
 
-	const filtered = dirEntries.filter((entry) => !shouldExcludeEntry(entry.name, parentRelativePath, projectFolder));
+	const filtered = dirEntries.filter((entry) => !isExcludedEntry(entry.name));
 
 	const entries: FileTreeEntry[] = [];
 

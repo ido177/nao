@@ -234,6 +234,15 @@ export const updateEnabledToolsAndKnownServers = async (
 		.execute();
 };
 
+export const getEnvVars = async (projectId: string): Promise<Record<string, string>> => {
+	const project = await getProjectById(projectId);
+	return (project?.envVars as Record<string, string>) ?? {};
+};
+
+export const updateEnvVars = async (projectId: string, envVars: Record<string, string>): Promise<void> => {
+	await db.update(s.project).set({ envVars }).where(eq(s.project.id, projectId)).execute();
+};
+
 export const retrieveProjectById = async (projectId: string): Promise<DBProject> => {
 	const project = await getProjectById(projectId);
 	if (!project) {

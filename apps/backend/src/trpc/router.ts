@@ -7,6 +7,7 @@ import { chatForkRoutes } from './chat-fork.routes';
 import { citationRoutes } from './citation.routes';
 import { contextExplorerRoutes } from './context-explorer.routes';
 import { feedbackRoutes } from './feedback.routes';
+import { githubRoutes } from './github.routes';
 import { logRoutes } from './log.routes';
 import { mcpRoutes } from './mcp.routes';
 import { memoryRoutes } from './memory.routes';
@@ -31,6 +32,7 @@ export const trpcRouter = router({
 	citation: citationRoutes,
 	contextExplorer: contextExplorerRoutes,
 	feedback: feedbackRoutes,
+	github: githubRoutes,
 	log: logRoutes,
 	posthog: posthogRoutes,
 	project: projectRoutes,

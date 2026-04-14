@@ -44,7 +44,13 @@ export const testRoutes = async (app: App) => {
 				if (sql) {
 					const { data: expectedData, columns: expectedColumns } = await executeQuery(
 						{ sql_query: sql },
-						{ projectFolder: project.path!, chatId: '', agentSettings: null, queryResults: new Map() },
+						{
+							projectFolder: project.path!,
+							chatId: '',
+							agentSettings: null,
+							envVars: {},
+							queryResults: new Map(),
+						},
 					);
 					const { data } = await testAgentService.runVerification(
 						projectId,

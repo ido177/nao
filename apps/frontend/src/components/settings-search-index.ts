@@ -6,6 +6,7 @@ export interface SettingsSearchEntry {
 	description?: string;
 	keywords?: string[];
 	adminOnly?: boolean;
+	cloudHidden?: boolean;
 }
 
 export const settingsSearchIndex: SettingsSearchEntry[] = [
@@ -59,6 +60,13 @@ export const settingsSearchIndex: SettingsSearchEntry[] = [
 	{
 		page: '/settings/organization',
 		pageLabel: 'Organization',
+		title: 'Import from GitHub',
+		description: 'Connect your GitHub account and import a repository as a project.',
+		keywords: ['github', 'repository', 'repo', 'import', 'git', 'integration', 'clone'],
+	},
+	{
+		page: '/settings/organization',
+		pageLabel: 'Organization',
 		title: 'Organization API Keys',
 		description: 'Generate organization-scoped API keys for actions like deploying a project from the nao CLI.',
 		keywords: ['api key', 'deploy key', 'token', 'credentials'],
@@ -71,6 +79,22 @@ export const settingsSearchIndex: SettingsSearchEntry[] = [
 		title: 'Project Information',
 		description: 'View your project name and path.',
 		keywords: ['project name', 'project path'],
+		adminOnly: true,
+	},
+	{
+		page: '/settings/project',
+		pageLabel: 'Project',
+		title: 'Repository',
+		description: 'View linked GitHub repository and pull latest changes.',
+		keywords: ['github', 'git', 'pull', 'sync', 'repository', 'refresh'],
+		adminOnly: true,
+	},
+	{
+		page: '/settings/project',
+		pageLabel: 'Project',
+		title: 'Environment Variables',
+		description: 'Set environment variables referenced in nao_config.yaml.',
+		keywords: ['env', 'environment', 'variable', 'secret', 'credential', 'config', 'jinja'],
 		adminOnly: true,
 	},
 	{
@@ -193,6 +217,13 @@ export const settingsSearchIndex: SettingsSearchEntry[] = [
 		keywords: ['telegram bot', 'telegram webhook', 'messaging'],
 		adminOnly: true,
 	},
+	{
+		page: '/settings/project/telegram',
+		pageLabel: 'Telegram',
+		title: 'Linking Code',
+		description: 'Send /login <code> to the Telegram bot you want to link.',
+		keywords: ['link', 'login', 'telegram'],
+	},
 
 	// ── Project > WhatsApp ───────────────────────────────────
 	{
@@ -274,6 +305,7 @@ export const settingsSearchIndex: SettingsSearchEntry[] = [
 		description: 'Real-time backend logs with auto-refresh.',
 		keywords: ['error', 'warn', 'debug', 'info', 'terminal', 'console'],
 		adminOnly: true,
+		cloudHidden: true,
 	},
 
 	// ── Memory (user-level) ──────────────────────────────────

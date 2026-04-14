@@ -9,10 +9,15 @@ import type { SettingsSearchEntry } from '@/components/settings-search-index';
 import { settingsSearchIndex } from '@/components/settings-search-index';
 import { cn, hideIf } from '@/lib/utils';
 
+interface NavContext {
+	isAdmin: boolean;
+	isCloud: boolean;
+}
+
 interface NavItem {
 	label: string;
 	to?: string;
-	visible?: (isAdmin: boolean) => boolean;
+	visible?: (ctx: NavContext) => boolean;
 	type?: 'divider' | 'item';
 }
 
@@ -36,22 +41,22 @@ const settingsNavItems: NavItem[] = [
 	{
 		label: 'Observability',
 		type: 'divider',
-		visible: (isAdmin) => isAdmin,
+		visible: ({ isAdmin }) => isAdmin,
 	},
 	{
 		label: 'Usage & costs',
 		to: '/settings/usage',
-		visible: (isAdmin) => isAdmin,
+		visible: ({ isAdmin }) => isAdmin,
 	},
 	{
 		label: 'Chats Replay',
 		to: '/settings/chats-replay',
-		visible: (isAdmin) => isAdmin,
+		visible: ({ isAdmin }) => isAdmin,
 	},
 	{
 		label: 'Logs',
 		to: '/settings/logs',
-		visible: (isAdmin) => isAdmin,
+		visible: ({ isAdmin, isCloud }) => isAdmin && !isCloud,
 	},
 	{
 		label: 'Context',
@@ -60,18 +65,18 @@ const settingsNavItems: NavItem[] = [
 	{
 		label: 'Memory',
 		to: '/settings/memory',
-		visible: undefined,
 	},
 	{
 		label: 'File Explorer',
 		to: '/settings/context-explorer',
-		visible: (isAdmin) => isAdmin,
+		visible: ({ isAdmin }) => isAdmin,
 	},
 ];
 
 interface SidebarSettingsNavProps {
 	isCollapsed: boolean;
 	isAdmin: boolean;
+	isCloud: boolean;
 }
 
 function dedupeByPage(results: FuseResult<SettingsSearchEntry>[]) {
@@ -85,12 +90,12 @@ function dedupeByPage(results: FuseResult<SettingsSearchEntry>[]) {
 	});
 }
 
-export function SidebarSettingsNav({ isCollapsed, isAdmin }: SidebarSettingsNavProps) {
+export function SidebarSettingsNav({ isCollapsed, isAdmin, isCloud }: SidebarSettingsNavProps) {
 	const navigate = useNavigate();
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [query, setQuery] = useState('');
 
-	const navItems = settingsNavItems.filter((item) => item.visible?.(isAdmin) ?? true);
+	const navItems = settingsNavItems.filter((item) => item.visible?.({ isAdmin, isCloud }) ?? true);
 
 	useEffect(() => {
 		const handleSlashKey = (e: KeyboardEvent) => {
@@ -109,7 +114,7 @@ export function SidebarSettingsNav({ isCollapsed, isAdmin }: SidebarSettingsNavP
 	}, [isCollapsed]);
 
 	const fuse = useMemo(() => {
-		const entries = settingsSearchIndex.filter((e) => !e.adminOnly || isAdmin);
+		const entries = settingsSearchIndex.filter((e) => (!e.adminOnly || isAdmin) && (!e.cloudHidden || !isCloud));
 		return new Fuse(entries, {
 			keys: [
 				{ name: 'title', weight: 0.4 },
@@ -120,7 +125,7 @@ export function SidebarSettingsNav({ isCollapsed, isAdmin }: SidebarSettingsNavP
 			threshold: 0.4,
 			includeScore: true,
 		});
-	}, [isAdmin]);
+	}, [isAdmin, isCloud]);
 
 	const results = useMemo(() => {
 		if (query.length < 2) {

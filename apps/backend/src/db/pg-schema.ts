@@ -32,6 +32,7 @@ export const user = pgTable('user', {
 	requiresPasswordReset: boolean('requires_password_reset').default(false).notNull(),
 	memoryEnabled: boolean('memory_enabled').default(true).notNull(),
 	messagingProviderCode: text('messaging_provider_code').unique(),
+	githubAccessToken: text('github_access_token'),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at')
 		.defaultNow()
@@ -108,6 +109,7 @@ export const organization = pgTable('organization', {
 	googleClientId: text('google_client_id'),
 	googleClientSecret: text('google_client_secret'),
 	googleAuthDomains: text('google_auth_domains'), // comma-separated list
+
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at')
 		.defaultNow()
@@ -143,6 +145,8 @@ export const project = pgTable(
 		agentSettings: jsonb('agent_settings').$type<AgentSettings>(),
 		enabledMcpTools: jsonb('enabled_tools').$type<string[]>().notNull().default([]),
 		knownMcpServers: jsonb('known_mcp_servers').$type<string[]>().notNull().default([]),
+
+		envVars: jsonb('env_vars').$type<Record<string, string>>().notNull().default({}),
 
 		slackSettings: jsonb('slack_settings').$type<SlackSettings>(),
 		teamsSettings: jsonb('teams_settings').$type<TeamsSettings>(),

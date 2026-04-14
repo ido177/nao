@@ -46,7 +46,9 @@ export function Sidebar() {
 	const { fire: openCommandMenu } = useCommandMenuCallback();
 	const project = useQuery(trpc.project.getCurrent.queryOptions());
 	const projects = useQuery(trpc.project.listForCurrentUser.queryOptions());
+	const config = useQuery(trpc.system.getPublicConfig.queryOptions());
 	const isAdmin = project.data?.userRole === 'admin';
+	const isCloud = config.data?.naoMode === 'cloud';
 
 	const locationPath = useRouterState({ select: (s) => s.location.pathname });
 	const isInSettings = matchRoute({ to: '/settings', fuzzy: true });
@@ -108,13 +110,15 @@ export function Sidebar() {
 			}
 
 			setActiveProjectId(projectId);
-			queryClient.clear();
-			await navigate({ to: '/' });
+			if (!isInSettings) {
+				await navigate({ to: '/' });
+			}
+			await queryClient.resetQueries();
 			if (isMobile) {
 				closeMobile();
 			}
 		},
-		[closeMobile, isMobile, navigate, project.data, queryClient],
+		[closeMobile, isInSettings, isMobile, navigate, project.data, queryClient],
 	);
 
 	const sidebarContent = (
@@ -224,7 +228,7 @@ export function Sidebar() {
 			</div>
 
 			{isInSettings ? (
-				<SidebarSettingsNav isCollapsed={effectiveIsCollapsed} isAdmin={isAdmin} />
+				<SidebarSettingsNav isCollapsed={effectiveIsCollapsed} isAdmin={isAdmin} isCloud={isCloud} />
 			) : (
 				<SidebarNav chats={chats.data?.chats || []} isCollapsed={effectiveIsCollapsed} />
 			)}

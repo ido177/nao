@@ -15,6 +15,7 @@ import { agentRoutes } from './routes/agent';
 import { authRoutes } from './routes/auth';
 import { chartRoutes } from './routes/chart';
 import { deployRoutes } from './routes/deploy';
+import { githubRoutes } from './routes/github';
 import { imageRoutes } from './routes/image';
 import { slackRoutes } from './routes/slack';
 import { teamsRoutes } from './routes/teams';
@@ -160,6 +161,10 @@ app.register(whatsappRoutes, {
 
 app.register(deployRoutes, {
 	prefix: '/api',
+});
+
+app.register(githubRoutes, {
+	prefix: '/api/github',
 });
 
 /**

@@ -1,7 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
-import { Plus } from 'lucide-react';
+import { Github, Plus } from 'lucide-react';
 import { USER_ROLES } from '@nao/shared/types';
 import type { UserRole } from '@nao/shared/types';
 
@@ -13,6 +13,7 @@ import {
 	RemoveMemberDialog,
 	NewCredentialsDialog,
 } from '@/components/settings/team';
+import { GitHubRepoPicker } from '@/components/settings/github-repo-picker';
 import { OrgApiKeys } from '@/components/settings/org-api-keys';
 import { Badge } from '@/components/ui/badge';
 import { SettingsCard, SettingsPageWrapper } from '@/components/ui/settings-card';
@@ -35,7 +36,14 @@ function OrganizationPage() {
 	const membersQuery = useQuery(trpc.organization.getMembers.queryOptions());
 	const isAdmin = org.data?.role === 'admin';
 
+	const githubAvailable = useQuery(trpc.github.isAvailable.queryOptions());
+	const githubStatus = useQuery({
+		...trpc.github.getStatus.queryOptions(),
+		enabled: githubAvailable.data === true,
+	});
+
 	const [isAddOpen, setIsAddOpen] = useState(false);
+	const [repoPickerOpen, setRepoPickerOpen] = useState(false);
 	const [editMember, setEditMember] = useState<TeamMember | null>(null);
 	const [removeMember, setRemoveMember] = useState<TeamMember | null>(null);
 	const [resetPasswordMember, setResetPasswordMember] = useState<TeamMember | null>(null);
@@ -102,6 +110,25 @@ function OrganizationPage() {
 		setCredentials({ email: resetPasswordMember.email, password: result.password });
 	};
 
+	const isGithubConnected = githubStatus.data?.connected === true;
+	const showGithubImport = githubAvailable.data === true;
+
+	const projectsAction = showGithubImport ? (
+		isGithubConnected ? (
+			<Button variant='secondary' size='sm' onClick={() => setRepoPickerOpen(true)}>
+				<Github className='size-3.5' />
+				Import from GitHub
+			</Button>
+		) : (
+			<Button variant='secondary' size='sm' asChild>
+				<a href='/api/github/connect'>
+					<Github className='size-3.5' />
+					Import from GitHub
+				</a>
+			</Button>
+		)
+	) : undefined;
+
 	return (
 		<SettingsPageWrapper>
 			<div className='flex flex-col gap-5'>
@@ -133,7 +160,7 @@ function OrganizationPage() {
 						/>
 					)}
 				</SettingsCard>
-				<SettingsCard title='Projects'>
+				<SettingsCard title='Projects' action={projectsAction}>
 					{projectsQuery.isLoading ? (
 						<div className='text-sm text-muted-foreground'>Loading projects...</div>
 					) : projectsQuery.data?.length ? (
@@ -156,7 +183,12 @@ function OrganizationPage() {
 							</TableBody>
 						</Table>
 					) : (
-						<div className='text-sm text-muted-foreground'>No projects found.</div>
+						<div className='text-sm text-muted-foreground'>
+							No projects found.{' '}
+							<Link to='/settings/project' className='text-primary hover:underline'>
+								Add a first project.
+							</Link>
+						</div>
 					)}
 				</SettingsCard>
 				<OrgApiKeys isAdmin={isAdmin} />
@@ -208,6 +240,8 @@ function OrganizationPage() {
 				onOpenChange={(open) => !open && setCredentials(null)}
 				credentials={credentials}
 			/>
+
+			<GitHubRepoPicker open={repoPickerOpen} onOpenChange={setRepoPickerOpen} />
 		</SettingsPageWrapper>
 	);
 }

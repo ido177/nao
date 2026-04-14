@@ -139,8 +139,7 @@ export function OrgApiKeys({
 						<div className='space-y-1'>
 							<div className='text-sm font-medium text-foreground'>Deploy command</div>
 							<p className='text-sm text-muted-foreground'>
-								Run this from the folder that contains <code>nao_config.yaml</code>. If the project
-								lives somewhere else, add <code>--path /path/to/project</code>.
+								Run this from the folder that contains <code>nao_config.yaml</code>.
 							</p>
 						</div>
 						<Button
@@ -160,12 +159,6 @@ export function OrgApiKeys({
 					<code className='overflow-x-auto rounded-md border bg-background px-3 py-2 text-xs font-mono whitespace-pre'>
 						{deployCommand}
 					</code>
-
-					<p className='text-sm text-muted-foreground'>
-						<code>nao deploy</code> packages the current project directory, uploads it to this nao instance,
-						and creates or updates the cloud project that matches <code>project_name</code> in{' '}
-						<code>nao_config.yaml</code>.
-					</p>
 				</div>
 			)}
 

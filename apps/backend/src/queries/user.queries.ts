@@ -59,6 +59,19 @@ export const regenerateMessagingProviderCode = async (userId: string): Promise<s
 	return code;
 };
 
+export const getGithubToken = async (userId: string): Promise<string | null> => {
+	const [user] = await db
+		.select({ githubAccessToken: s.user.githubAccessToken })
+		.from(s.user)
+		.where(eq(s.user.id, userId))
+		.execute();
+	return user?.githubAccessToken ?? null;
+};
+
+export const updateGithubToken = async (userId: string, token: string | null): Promise<void> => {
+	await db.update(s.user).set({ githubAccessToken: token }).where(eq(s.user.id, userId)).execute();
+};
+
 export const create = async (user: NewUser, account: NewAccount): Promise<User> => {
 	return await db.transaction(async (tx) => {
 		user.messagingProviderCode = createMessagingProviderCode();

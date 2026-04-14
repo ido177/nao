@@ -21,6 +21,7 @@ export const user = sqliteTable('user', {
 	requiresPasswordReset: integer('requires_password_reset', { mode: 'boolean' }).default(false).notNull(),
 	memoryEnabled: integer('memory_enabled', { mode: 'boolean' }).default(true).notNull(),
 	messagingProviderCode: text('messaging_provider_code').unique(),
+	githubAccessToken: text('github_access_token'),
 	createdAt: integer('created_at', { mode: 'timestamp_ms' })
 		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 		.notNull(),
@@ -149,6 +150,8 @@ export const project = sqliteTable(
 		agentSettings: text('agent_settings', { mode: 'json' }).$type<AgentSettings>(),
 		enabledMcpTools: text('enabled_tools', { mode: 'json' }).$type<string[]>().notNull().default([]),
 		knownMcpServers: text('known_mcp_servers', { mode: 'json' }).$type<string[]>().notNull().default([]),
+
+		envVars: text('env_vars', { mode: 'json' }).$type<Record<string, string>>().notNull().default({}),
 
 		slackSettings: text('slack_settings', { mode: 'json' }).$type<SlackSettings>(),
 		teamsSettings: text('teams_settings', { mode: 'json' }).$type<TeamsSettings>(),

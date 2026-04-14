@@ -21,6 +21,7 @@ import { AgentSettings } from '../types/agent-settings';
 import { llmConfigSchema, llmProviderSchema } from '../types/llm';
 import { isValidIsoDateString } from '../utils/date';
 import { getEnvApiKey, getEnvBaseUrls, getEnvProviders, getProjectAvailableModels } from '../utils/llm';
+import { extractRequiredEnvVars } from '../utils/nao-config';
 import { buildCredentialPreviews } from '../utils/utils';
 import { adminProtectedProcedure, projectProtectedProcedure, protectedProcedure, publicProcedure } from './trpc';
 
@@ -728,4 +729,19 @@ export const projectRoutes = {
 
 		return chat;
 	}),
+
+	getEnvVars: adminProtectedProcedure.query(async ({ ctx }) => {
+		const requiredVars = ctx.project.path ? extractRequiredEnvVars(ctx.project.path) : [];
+		const storedVars = await projectQueries.getEnvVars(ctx.project.id);
+		return {
+			required: requiredVars,
+			values: storedVars,
+		};
+	}),
+
+	updateEnvVars: adminProtectedProcedure
+		.input(z.object({ envVars: z.record(z.string(), z.string()) }))
+		.mutation(async ({ ctx, input }) => {
+			await projectQueries.updateEnvVars(ctx.project.id, input.envVars);
+		}),
 };
