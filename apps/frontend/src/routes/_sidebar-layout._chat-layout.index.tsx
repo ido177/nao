@@ -5,6 +5,7 @@ import { ChatMessages } from '@/components/chat-messages/chat-messages';
 import { useAgentContext } from '@/contexts/agent.provider';
 import { SavedPromptSuggestions } from '@/components/chat-saved-prompt-suggestions';
 import { ChatInput } from '@/components/chat-input';
+import { MobileHeader } from '@/components/mobile-header';
 
 export const Route = createFileRoute('/_sidebar-layout/_chat-layout/')({
 	component: RouteComponent,
@@ -17,6 +18,7 @@ function RouteComponent() {
 
 	return (
 		<div className='flex flex-col h-full flex-1 bg-panel min-w-72 overflow-hidden justify-center'>
+			<MobileHeader />
 			{messages.length ? (
 				<>
 					<ChatMessages />
