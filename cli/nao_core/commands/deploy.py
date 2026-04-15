@@ -6,11 +6,9 @@ from typing import Annotated
 import httpx
 import yaml
 from cyclopts import Parameter
-from rich.console import Console
 
 from nao_core.tracking import track_command
-
-console = Console()
+from nao_core.ui import UI
 
 DEFAULT_EXCLUSIONS = {
     ".git",
@@ -64,16 +62,16 @@ def _read_project_name(project_path: Path) -> str | None:
     """Read project_name from nao_config.yaml without resolving env vars."""
     config_file = project_path / "nao_config.yaml"
     if not config_file.exists():
-        console.print("[bold red]✗[/bold red] No nao_config.yaml found in current directory")
+        UI.error("No nao_config.yaml found in current directory")
         return None
     try:
         data = yaml.safe_load(config_file.read_text())
     except yaml.YAMLError as e:
-        console.print(f"[bold red]✗[/bold red] Failed to load nao_config.yaml: Invalid YAML syntax: {e}")
+        UI.error(f"Failed to load nao_config.yaml: Invalid YAML syntax: {e}")
         return None
     name = data.get("project_name") if isinstance(data, dict) else None
     if not name:
-        console.print("[bold red]✗[/bold red] nao_config.yaml is missing a 'project_name' field")
+        UI.error("nao_config.yaml is missing a 'project_name' field")
         return None
     return name
 
@@ -93,18 +91,18 @@ def deploy(
     if project_name is None:
         return
 
-    console.print(f"\n[bold]Deploying[/bold] [cyan]{project_name}[/cyan] to [cyan]{url}[/cyan]\n")
+    UI.print(f"\n[bold]Deploying[/bold] [cyan]{project_name}[/cyan] to [cyan]{url}[/cyan]\n")
 
     exclusions = DEFAULT_EXCLUSIONS | _load_naoignore(project_path)
 
-    console.print("[dim]Packaging project files...[/dim]")
+    UI.print("[dim]Packaging project files...[/dim]")
     tarball = _build_tarball(project_path, exclusions)
     size_mb = len(tarball) / (1024 * 1024)
-    console.print(f"[dim]Package size: {size_mb:.1f} MB[/dim]")
+    UI.print(f"[dim]Package size: {size_mb:.1f} MB[/dim]")
 
     deploy_url = f"{url.rstrip('/')}/api/deploy"
 
-    console.print("[dim]Uploading...[/dim]")
+    UI.print("[dim]Uploading...[/dim]")
     try:
         response = httpx.post(
             deploy_url,
@@ -113,29 +111,31 @@ def deploy(
             timeout=120.0,
         )
     except httpx.ConnectError:
-        console.print(f"\n[bold red]✗[/bold red] Could not connect to {url}")
-        console.print("[dim]Check the URL and ensure the nao instance is running.[/dim]")
+        UI.error(f"Could not connect to {url}")
+        UI.print("[dim]Check the URL and ensure the nao instance is running.[/dim]")
         return
     except httpx.TimeoutException:
-        console.print("\n[bold red]✗[/bold red] Request timed out")
+        UI.error("Request timed out")
         return
 
     if response.status_code == 401:
-        console.print("\n[bold red]✗[/bold red] Authentication failed. Check your API key.")
+        UI.error("Authentication failed. Check your API key.")
         return
 
     if response.status_code != 200:
-        console.print(f"\n[bold red]✗[/bold red] Deploy failed ({response.status_code})")
+        UI.error(f"Deploy failed ({response.status_code})")
         try:
             error = response.json().get("error", response.text)
         except Exception:
             error = response.text
-        console.print(f"[red]{error}[/red]")
+        UI.print(f"[red]{error}[/red]")
         return
 
     result = response.json()
     status = result.get("status", "unknown")
-    status_color = "green" if status == "created" else "yellow"
 
-    console.print(f"\n[bold {status_color}]✓[/bold {status_color}] Project [cyan]{project_name}[/cyan] {status}")
-    console.print(f"[dim]Project ID: {result.get('projectId')}[/dim]")
+    if status == "created":
+        UI.success(f"Project [cyan]{project_name}[/cyan] {status}")
+    else:
+        UI.warn(f"Project [cyan]{project_name}[/cyan] {status}")
+    UI.print(f"[dim]Project ID: {result.get('projectId')}[/dim]")
