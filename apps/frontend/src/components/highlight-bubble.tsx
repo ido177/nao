@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from './ui/button';
 import { Spinner } from './ui/spinner';
@@ -25,11 +25,13 @@ export const HighlightBubble = ({ shareId, contentType }: HighlightBubbleProps) 
 
 function BubbleContent({ shareId, contentType }: { shareId: string; contentType: 'chat' | 'story' }) {
 	const { selection, clearSelection, addAnchor, openAnchor } = useSelection();
+	const queryClient = useQueryClient();
 	const capturedSelection = useRef(selection);
 
 	const forkMutation = useMutation(
 		trpc.chatFork.fork.mutationOptions({
 			onSuccess: ({ chatId }) => {
+				queryClient.invalidateQueries({ queryKey: trpc.chat.list.queryKey() });
 				const sel = capturedSelection.current;
 				if (!sel) {
 					return;
