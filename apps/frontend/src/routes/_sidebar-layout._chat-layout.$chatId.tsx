@@ -30,8 +30,8 @@ export function RouteComponent() {
 	const { chatId } = Route.useParams();
 	const chat = useChatQuery({ chatId });
 	const title = chat.data?.title;
-	const shareQuery = useQuery(trpc.sharedChat.getShareOptionsByChatId.queryOptions({ chatId: chatId ?? '' }));
-	const isShared = !!shareQuery.data?.shareId;
+	const sharedChatsQuery = useQuery(trpc.sharedChat.list.queryOptions());
+	const isShared = !!sharedChatsQuery.data?.some((sc) => sc.chatId === chatId);
 
 	const containerRef = useRef<HTMLDivElement>(null);
 	const sidePanelRef = useRef<HTMLDivElement>(null);
