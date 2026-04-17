@@ -31,7 +31,7 @@ function BubbleContent({ shareId, contentType }: { shareId: string; contentType:
 	const forkMutation = useMutation(
 		trpc.chatFork.fork.mutationOptions({
 			onSuccess: ({ chatId }) => {
-				queryClient.invalidateQueries({ queryKey: trpc.chat.list.queryKey() });
+				queryClient.invalidateQueries({ queryKey: [['chat', 'listGrouped']] });
 				const sel = capturedSelection.current;
 				if (!sel) {
 					return;
