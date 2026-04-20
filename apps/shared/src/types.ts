@@ -103,7 +103,7 @@ export type DownloadFormat = 'pdf' | 'html';
 
 export const DOWNLOAD_FORMATS = ['pdf', 'html'] as const satisfies readonly DownloadFormat[];
 
-export const CHAT_GROUP_BY_OPTIONS = ['star', 'date', 'project', 'ownership', 'none'];
+export const CHAT_GROUP_BY_OPTIONS = ['star', 'date', 'project', 'ownership', 'sourcePlatform', 'none'];
 export const CHAT_FILTER_OPTIONS = ['all', 'mine', 'starred', 'shared', 'shared_with_me'];
 
 export type ChatGroupBy = (typeof CHAT_GROUP_BY_OPTIONS)[number];
