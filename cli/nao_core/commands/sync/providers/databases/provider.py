@@ -27,6 +27,7 @@ from nao_core.commands.sync.providers.databases.query_history import TableUsageS
 from nao_core.config import AnyDatabaseConfig, NaoConfig
 from nao_core.config.databases.base import DatabaseConfig, DatabaseTemplate, ProfilingRefreshPolicy
 from nao_core.config.llm import LLMConfig
+from nao_core.templates.context import NaoContext, create_nao_context
 from nao_core.templates.engine import get_template_engine
 
 from ..base import SyncProvider, SyncResult
@@ -107,6 +108,7 @@ def sync_database(
     project_path: Path | None = None,
     llm_config: LLMConfig | None = None,
     db_folder: str | None = None,
+    nao_ctx: NaoContext | None = None,
 ) -> DatabaseSyncState:
     """Sync a single database by rendering all database templates for each table."""
     engine = get_template_engine(project_path, llm_config=llm_config)
@@ -219,7 +221,14 @@ def sync_database(
 
                     t_render = time.monotonic()
                     try:
-                        content = engine.render(template_name, db=ctx, table_name=table, dataset=schema, **extra_ctx)
+                        content = engine.render(
+                            template_name,
+                            db=ctx,
+                            table_name=table,
+                            dataset=schema,
+                            **({"nao": nao_ctx} if nao_ctx else {}),
+                            **extra_ctx,
+                        )
                         render_dur = time.monotonic() - t_render
                         if render_dur > 5:
                             console.print(
@@ -267,7 +276,7 @@ class DatabaseSyncProvider(SyncProvider):
     """Provider for syncing database schemas to markdown documentation."""
 
     def __init__(self) -> None:
-        self._llm_config: LLMConfig | None = None
+        self._nao_config: NaoConfig | None = None
 
     @property
     def name(self) -> str:
@@ -282,7 +291,7 @@ class DatabaseSyncProvider(SyncProvider):
         return "databases"
 
     def pre_sync(self, config: NaoConfig, output_path: Path) -> None:
-        self._llm_config = config.llm
+        self._nao_config = config
         cleanup_stale_databases(config.databases, output_path, verbose=True)
 
     def get_items(self, config: NaoConfig) -> list[AnyDatabaseConfig]:
@@ -297,6 +306,9 @@ class DatabaseSyncProvider(SyncProvider):
         total_tables = 0
         total_removed = 0
         sync_states: list[DatabaseSyncState] = []
+
+        nao_ctx = create_nao_context(self._nao_config, project_path=project_path) if self._nao_config else None
+        llm_config = self._nao_config.llm if self._nao_config else None
 
         console.print(f"\n[bold cyan]{self.emoji}  Syncing {self.name}[/bold cyan]")
         console.print(f"[dim]Location:[/dim] {output_path.absolute()}")
@@ -326,8 +338,9 @@ class DatabaseSyncProvider(SyncProvider):
                         output_path,
                         progress,
                         project_path,
-                        self._llm_config,
+                        llm_config,
                         db_folder=db_folder,
+                        nao_ctx=nao_ctx,
                     )
                     sync_states.append(state)
                     total_datasets += state.schemas_synced

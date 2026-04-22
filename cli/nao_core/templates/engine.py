@@ -77,6 +77,11 @@ class TemplateEngine:
         self.env.filters["to_json"] = to_json
         self.env.filters["truncate_middle"] = truncate_middle
 
+        if self.project_path:
+            from .context import FileProvider
+
+            FileProvider(self.project_path).register_filters(self.env)
+
     def _register_globals(self) -> None:
         """Register template global helper functions."""
         self.env.globals["prompt"] = self._prompt  # type: ignore[assignment]

@@ -112,10 +112,13 @@ def render_template(
     # Register custom filters
     import json
 
+    nao = create_nao_context(config, project_path=project_path)
+
     env.filters["to_json"] = lambda v, indent=None: json.dumps(v, indent=indent, default=str, ensure_ascii=False)
 
-    # Create the nao context
-    nao = create_nao_context(config)
+    file_provider = getattr(nao, "file", None)
+    if file_provider is not None:
+        file_provider.register_filters(env)
 
     # Load and render the template
     template = env.get_template(str(template_path))
