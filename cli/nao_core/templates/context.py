@@ -45,6 +45,7 @@ class FileProvider:
 
     def __init__(self, project_path: Path):
         self._project_path = project_path
+        self._resolved_root = project_path.resolve()
         self._cache: dict[str, Any] = {}
 
     def _validate_path(self, path: str) -> Path:
@@ -54,7 +55,7 @@ class FileProvider:
             raise ValueError(f"Absolute paths are not allowed: '{path}'. Use a relative path from the project root.")
 
         resolved = (self._project_path / p).resolve()
-        if not resolved.is_relative_to(self._project_path.resolve()):
+        if not resolved.is_relative_to(self._resolved_root):
             raise ValueError(f"Path traversal is not allowed: '{path}'. Path must stay within the project directory.")
 
         return resolved
@@ -183,16 +184,19 @@ class FileProvider:
 
     def glob(self, pattern: str) -> list[str]:
         """Return matching file paths relative to the project root."""
+        cache_key = f"glob:{pattern}"
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
         if ".." in pattern:
             raise ValueError(f"Path traversal is not allowed in glob pattern: '{pattern}'")
 
-        resolved_root = self._project_path.resolve()
-        matches = [
-            str(p.relative_to(resolved_root))
-            for p in resolved_root.glob(pattern)
-            if p.is_file() and p.resolve().is_relative_to(resolved_root)
-        ]
-        return sorted(matches)
+        root = self._resolved_root
+        matches = sorted(
+            str(p.relative_to(root)) for p in root.glob(pattern) if p.is_file() and p.resolve().is_relative_to(root)
+        )
+        self._cache[cache_key] = matches
+        return matches
 
     def exists(self, path: str) -> bool:
         """Check if a file exists within the project root."""
@@ -237,7 +241,6 @@ class NotionPage:
             client = Client(auth=self.api_key)
             title = get_page_title(client, page_id)
 
-            # Export to markdown
             md_exporter = StringExporter(block_id=page_id, token=self.api_key)
             markdown = md_exporter.export()
             markdown = strip_images(markdown)

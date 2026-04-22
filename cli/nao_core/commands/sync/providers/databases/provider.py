@@ -246,7 +246,6 @@ def sync_database(
                         )
                         content = f"# {table}\n\nError generating content: {e}"
 
-                    output_file = table_path / output_filename
                     output_file.write_text(content)
 
                 state.add_table(schema, table)

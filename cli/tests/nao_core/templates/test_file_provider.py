@@ -12,28 +12,14 @@ from nao_core.templates.context import FileProvider
 @pytest.fixture()
 def project_dir(tmp_path: Path) -> Path:
     """Create a temporary project directory with test files."""
-    # YAML file
     (tmp_path / "metadata.yaml").write_text(yaml.dump({"name": "test", "version": 2}))
-
-    # Empty YAML file
     (tmp_path / "empty.yaml").write_text("")
-
-    # JSON file
     (tmp_path / "config.json").write_text(json.dumps({"key": "value", "items": [1, 2]}))
-
-    # CSV file
     (tmp_path / "data.csv").write_text("name,age\nAlice,30\nBob,25\n")
-
-    # Text file
     (tmp_path / "readme.txt").write_text("Hello, world!")
-
-    # Markdown with frontmatter
     (tmp_path / "doc.md").write_text("---\ntitle: Test\ntags:\n  - a\n  - b\n---\n\nBody content here.")
-
-    # Markdown without frontmatter
     (tmp_path / "plain.md").write_text("Just plain markdown.")
 
-    # Subdirectory with files
     sub = tmp_path / "schemas"
     sub.mkdir()
     (sub / "users.yaml").write_text(yaml.dump({"table": "users"}))

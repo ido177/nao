@@ -80,7 +80,8 @@ class TemplateEngine:
         if self.project_path:
             from .context import FileProvider
 
-            FileProvider(self.project_path).register_filters(self.env)
+            self._file_provider = FileProvider(self.project_path)
+            self._file_provider.register_filters(self.env)
 
     def _register_globals(self) -> None:
         """Register template global helper functions."""
