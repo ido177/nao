@@ -119,9 +119,10 @@ export class AgentService {
 		const configs = await llmConfigQueries.getProjectLlmConfigs(projectId);
 		const config = configs.at(0);
 		if (config) {
+			const region = (config.credentials as Record<string, string> | null)?.region;
 			return {
 				provider: config.provider,
-				modelId: getDefaultModelId(config.provider),
+				modelId: getDefaultModelId(config.provider, region),
 			};
 		}
 

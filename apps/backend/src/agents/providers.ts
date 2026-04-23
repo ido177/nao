@@ -12,14 +12,17 @@ import { createOpenRouter, LanguageModelV3 } from '@openrouter/ai-sdk-provider';
 import { createOllama } from 'ai-sdk-ollama';
 
 import type { LlmProvidersType, ProviderConfigMap, ProviderSettings } from '../types/llm';
-import { PROVIDER_META } from './provider-meta';
+import { PROVIDER_META, resolveBedrockModelId } from './provider-meta';
 
 export {
+	BEDROCK_REGION_PREFIXES,
+	getBedrockRegionPrefix,
 	getDefaultModelId,
 	getProviderApiKeyRequirement,
 	getProviderAuth,
 	KNOWN_MODELS,
 	PROVIDER_META,
+	resolveBedrockModelId,
 } from './provider-meta';
 
 // See: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
@@ -205,24 +208,3 @@ function buildVertexAuthOptions(creds?: Record<string, string>) {
 	return undefined;
 }
 
-const BEDROCK_REGION_PREFIXES = new Set(['us', 'eu', 'ap']);
-const BEDROCK_CROSS_REGION_PROVIDERS = new Set(['anthropic', 'meta']);
-
-function getBedrockRegionPrefix(region: string): string {
-	const geo = region.split('-')[0];
-	return BEDROCK_REGION_PREFIXES.has(geo) ? geo : 'us';
-}
-
-/** Ensure cross-region inference models use the correct geographic prefix for the target region. */
-function resolveBedrockModelId(modelId: string, region: string): string {
-	const prefix = getBedrockRegionPrefix(region);
-	const firstSegment = modelId.split('.')[0];
-	if (BEDROCK_REGION_PREFIXES.has(firstSegment)) {
-		const rest = modelId.slice(firstSegment.length + 1);
-		return firstSegment === prefix ? modelId : `${prefix}.${rest}`;
-	}
-	if (BEDROCK_CROSS_REGION_PROVIDERS.has(firstSegment)) {
-		return `${prefix}.${modelId}`;
-	}
-	return modelId;
-}

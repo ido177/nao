@@ -310,10 +310,17 @@ export const PROVIDER_META: ProviderMetaMap = {
 	},
 };
 
-export function getDefaultModelId(provider: LlmProvider): string {
+export function getDefaultModelId(provider: LlmProvider, region?: string): string {
 	const models = PROVIDER_META[provider].models;
 	const defaultModel = models.find((m) => m.default);
-	return defaultModel?.id ?? models[0]?.id ?? '';
+	const modelId = defaultModel?.id ?? models[0]?.id ?? '';
+	if (provider === 'bedrock') {
+		const effectiveRegion = region ?? process.env.AWS_REGION;
+		if (effectiveRegion) {
+			return resolveBedrockModelId(modelId, effectiveRegion);
+		}
+	}
+	return modelId;
 }
 
 export function getProviderAuth(provider: LlmProvider): ProviderAuth {
@@ -322,6 +329,28 @@ export function getProviderAuth(provider: LlmProvider): ProviderAuth {
 
 export function getProviderApiKeyRequirement(provider: LlmProvider): boolean {
 	return PROVIDER_META[provider].auth.apiKey === 'required';
+}
+
+export const BEDROCK_REGION_PREFIXES = new Set(['us', 'eu', 'ap']);
+const BEDROCK_CROSS_REGION_PROVIDERS = new Set(['anthropic', 'meta']);
+
+export function getBedrockRegionPrefix(region: string): string {
+	const geo = region.split('-')[0];
+	return BEDROCK_REGION_PREFIXES.has(geo) ? geo : 'us';
+}
+
+/** Ensure cross-region inference models use the correct geographic prefix for the target region. */
+export function resolveBedrockModelId(modelId: string, region: string): string {
+	const prefix = getBedrockRegionPrefix(region);
+	const firstSegment = modelId.split('.')[0];
+	if (BEDROCK_REGION_PREFIXES.has(firstSegment)) {
+		const rest = modelId.slice(firstSegment.length + 1);
+		return firstSegment === prefix ? modelId : `${prefix}.${rest}`;
+	}
+	if (BEDROCK_CROSS_REGION_PROVIDERS.has(firstSegment)) {
+		return `${prefix}.${modelId}`;
+	}
+	return modelId;
 }
 
 export const KNOWN_MODELS = Object.fromEntries(

@@ -176,8 +176,8 @@ export const getProjectAvailableModels = async (
 		const enabledModels = config.enabledModels ?? [];
 
 		if (enabledModels.length === 0) {
-			// If no models explicitly enabled, add the default
-			const defaultModelId = getDefaultModelId(provider);
+			const region = (config.credentials as Record<string, string> | null)?.region;
+			const defaultModelId = getDefaultModelId(provider, region);
 			models.push({ provider, modelId: defaultModelId, name: getModelName(provider, defaultModelId) });
 		} else {
 			for (const modelId of enabledModels) {

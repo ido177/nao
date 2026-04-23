@@ -91,8 +91,8 @@ export const getProjectLlmConfigForModel = async (
 	const isModelEnabled = enabledModels.length === 0 || enabledModels.includes(modelId);
 
 	if (!isModelEnabled) {
-		// Model not enabled, use the first enabled model or default
-		const fallbackModel = enabledModels[0] ?? getDefaultModelId(provider);
+		const region = (config.credentials as Record<string, string> | null)?.region;
+		const fallbackModel = enabledModels[0] ?? getDefaultModelId(provider, region);
 		return { config, modelId: fallbackModel };
 	}
 
