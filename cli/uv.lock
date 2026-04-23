@@ -2383,6 +2383,20 @@ wheels = [
 ]
 
 [[package]]
+name = "mysql-connector-python"
+version = "9.7.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7a/7b/bfbe1732bdc413fa29d4431e04f257bed32b0f3efe775ca2e70e9d347008/mysql_connector_python-9.7.0-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:ee90c5f44f706f012be17f03f6ad158ff96e7f2dcc077896fe4537d3d28b3cf4", size = 20265583, upload-time = "2026-04-23T07:15:43.703Z" },
+    { url = "https://files.pythonhosted.org/packages/43/40/cba971fdc54522742955f12d4b019e9f3325d9a5c734abf5f012fde7cfff/mysql_connector_python-9.7.0-cp310-cp310-macosx_14_0_x86_64.whl", hash = "sha256:a2f371ab69d65c61136c51ad7026017400166cef3c959cab7a9fb668c7acbfba", size = 19826949, upload-time = "2026-04-23T07:15:46.443Z" },
+    { url = "https://files.pythonhosted.org/packages/83/5c/724577da77cd33d056ad48d1e29149f6c123371d651c0d824f6bfd2af28f/mysql_connector_python-9.7.0-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:9bdfc2d4c4444cd1cc79cc6487c047b28fe2b26d0327b27eb9f5737bb553cb5c", size = 21917561, upload-time = "2026-04-23T07:15:49.077Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/40/f0184970f6483a4e5ffcb99028f8402f3789b885872a5779edd3fa53da44/mysql_connector_python-9.7.0-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:6546e0b60c275409a5add9e3308c3897fcf478d1338cd845b1664c1a8946f72f", size = 21687512, upload-time = "2026-04-23T07:15:51.614Z" },
+    { url = "https://files.pythonhosted.org/packages/50/ee/0be8e060376e518897f4b3433e768ccd05bc8bb3d08c436cc2441b44ac0b/mysql_connector_python-9.7.0-cp310-cp310-win_amd64.whl", hash = "sha256:c51be697bfdfdf63bb71c5ecc51f7c6faf4aaa3d14a0136fa16e97cc37df1185", size = 17678391, upload-time = "2026-04-23T07:15:54.626Z" },
+    { url = "https://files.pythonhosted.org/packages/70/fa/babe981ec8c24eece7f47dc52c5e3fe3f126bc99cc80d637b49ac2fe50a4/mysql_connector_python-9.7.0-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:b5cb8a3ba42b539f79cd13e4c8376d28506f3180f7079c9b04ea7bfd0424fb03", size = 20265659, upload-time = "2026-04-23T07:15:57.375Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/4b/c45b8b601b0270faf1d4384e4c7270af9abb8d95ea39425253217c3c236c/mysql_connector_python-9.7.0-cp311-cp311-macosx_14_0_x86_64.whl", hash = "sha256:5492d57a6a0e5127a928290737fbb91b66b46d31dac8de3e7604e550bf3b3a6e", size = 19826940, upload-time = "2026-04-23T07:16:00.156Z" },
+]
+
+[[package]]
 name = "mysqlclient"
 version = "2.2.8"
 source = { registry = "https://pypi.org/simple" }
@@ -2434,6 +2448,7 @@ all = [
     { name = "google-genai" },
     { name = "ibis-framework", extra = ["athena", "bigquery", "clickhouse", "databricks", "duckdb", "mssql", "mysql", "postgres", "snowflake", "trino"] },
     { name = "mistralai" },
+    { name = "mysql-connector-python" },
     { name = "notion-client" },
     { name = "notion2md" },
     { name = "ollama" },
@@ -2448,6 +2463,7 @@ all-databases = [
     { name = "google-cloud" },
     { name = "ibis-framework", extra = ["athena", "bigquery", "clickhouse", "databricks", "duckdb", "mssql", "mysql", "postgres", "snowflake", "trino"] },
     { name = "redshift-connector" },
+    { name = "mysql-connector-python" },
     { name = "snowflake-connector-python", extra = ["secure-local-storage"] },
     { name = "sshtunnel" },
 ]
@@ -2520,6 +2536,9 @@ snowflake = [
     { name = "ibis-framework", extra = ["snowflake"] },
     { name = "snowflake-connector-python", extra = ["secure-local-storage"] },
 ]
+starrocks = [
+    { name = "mysql-connector-python" },
+]
 trino = [
     { name = "ibis-framework", extra = ["trino"] },
 ]
@@ -2559,9 +2578,10 @@ requires-dist = [
     { name = "ibis-framework", extras = ["trino"], marker = "extra == 'trino'", specifier = ">=9.0.0" },
     { name = "jinja2", specifier = ">=3.1.0" },
     { name = "mistralai", marker = "extra == 'mistral'", specifier = ">=1.11.1,<2.0.0" },
+    { name = "mysql-connector-python", marker = "extra == 'starrocks'", specifier = ">=9.0.0" },
     { name = "nao-core", extras = ["all-databases", "all-llms", "notion"], marker = "extra == 'all'" },
     { name = "nao-core", extras = ["openai", "anthropic", "mistral", "gemini", "ollama"], marker = "extra == 'all-llms'" },
-    { name = "nao-core", extras = ["postgres", "bigquery", "snowflake", "duckdb", "clickhouse", "databricks", "mysql", "mssql", "athena", "trino", "redshift", "fabric"], marker = "extra == 'all-databases'" },
+    { name = "nao-core", extras = ["postgres", "bigquery", "snowflake", "duckdb", "clickhouse", "databricks", "mysql", "mssql", "athena", "trino", "redshift", "fabric", "starrocks"], marker = "extra == 'all-databases'" },
     { name = "notion-client", marker = "extra == 'notion'", specifier = ">=2.7.0" },
     { name = "notion2md", marker = "extra == 'notion'", specifier = ">=2.9.0" },
     { name = "numpy", specifier = ">=1.26.0" },
@@ -2585,7 +2605,7 @@ requires-dist = [
     { name = "sshtunnel", marker = "extra == 'redshift'", specifier = ">=0.4.0" },
     { name = "uvicorn", specifier = ">=0.40.0" },
 ]
-provides-extras = ["postgres", "bigquery", "snowflake", "duckdb", "clickhouse", "databricks", "mysql", "mssql", "athena", "trino", "redshift", "fabric", "openai", "anthropic", "mistral", "gemini", "ollama", "notion", "all-databases", "all-llms", "all", "dev"]
+provides-extras = ["postgres", "bigquery", "snowflake", "duckdb", "clickhouse", "databricks", "mysql", "mssql", "athena", "trino", "redshift", "fabric", "starrocks", "openai", "anthropic", "mistral", "gemini", "ollama", "notion", "all-databases", "all-llms", "all", "dev"]
 
 [package.metadata.requires-dev]
 dev = [
