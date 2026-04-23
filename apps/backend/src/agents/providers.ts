@@ -207,4 +207,3 @@ function buildVertexAuthOptions(creds?: Record<string, string>) {
 
 	return undefined;
 }
-
