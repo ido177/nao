@@ -178,7 +178,9 @@ export function createProviderModel(
 			? wrapLanguageModel({ model, middleware: qwen3CoderToolMiddleware })
 			: model,
 		providerOptions: {
-			[provider]: shouldUseOpenAIChatPath(provider, modelId) ? modelConfig : { ...defaultOptions, ...modelConfig },
+			[provider]: shouldUseOpenAIChatPath(provider, modelId)
+				? modelConfig
+				: { ...defaultOptions, ...modelConfig },
 		},
 		contextWindow,
 	};
