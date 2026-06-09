@@ -19,7 +19,7 @@ export async function checkForUpdate(): Promise<VersionCheckResult> {
 	}
 
 	const currentVersion = env.APP_VERSION;
-	const latestVersion = await fetchLatestVersion();
+	const latestVersion = env.NAO_DISABLE_EXTERNAL_CHECKS ? null : await fetchLatestVersion();
 	const updateAvailable = latestVersion !== null && isNewerVersion(currentVersion, latestVersion);
 
 	cachedResult = { currentVersion, latestVersion, updateAvailable };

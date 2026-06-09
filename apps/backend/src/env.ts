@@ -54,7 +54,7 @@ const envSchema = z.object({
 
 	CLOUD_GITHUB_CLIENT_ID: z.string().optional(),
 	CLOUD_GITHUB_CLIENT_SECRET: z.string().optional(),
-	DEFAULT_USER_ROLE: z.enum(['admin', 'user']).default('user'),
+	DEFAULT_USER_ROLE: z.enum(['admin', 'user', 'viewer']).default('viewer'),
 
 	SMTP_PASSWORD: z.string().optional(),
 	SMTP_HOST: z.string().optional(),
@@ -76,6 +76,12 @@ const envSchema = z.object({
 		.string()
 		.optional()
 		.transform((val) => val?.trim() || undefined),
+
+	NAO_DISABLE_EXTERNAL_CHECKS: z
+		.enum(['true', 'false'])
+		.optional()
+		.default('false')
+		.transform((val) => val === 'true'),
 
 	POSTHOG_KEY: z.string().optional(),
 	POSTHOG_HOST: z.url({ message: 'POSTHOG_HOST must be a valid URL' }).optional(),

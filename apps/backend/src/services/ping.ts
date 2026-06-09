@@ -5,7 +5,7 @@ import { LICENSES_STARTUP_PING_URL } from './license-endpoints';
 const STARTUP_PING_TIMEOUT_MS = 3_000;
 
 export async function pingLicensesServer(): Promise<void> {
-	if (env.MODE !== 'prod') {
+	if (env.MODE !== 'prod' || env.NAO_DISABLE_EXTERNAL_CHECKS) {
 		return;
 	}
 	const license = await getLicense();
