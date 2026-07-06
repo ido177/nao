@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="71622bcc-22da-4d75-ab8b-909dfd5bb47b" name="Changes" comment="add role and project permissions for new manually added users">
+      <change beforePath="$PROJECT_DIR$/apps/backend/src/components/ai/system-prompt.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/backend/src/components/ai/system-prompt.tsx" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="12692e06b9669ca2db2fa4745378748f2315a931" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;ido177&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:ido177/nao.git&quot;,
+    &quot;accountId&quot;: &quot;73bc2a15-00f3-407e-8495-b3c31584a481&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3Ckl7lPkT8corvILesTAfZns4bd" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.starrocks.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main-united&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/Users/k.romanikhin/PycharmProjects/nao/node_modules/typescript/lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-PY-261.25134.203" />
+        <option value="bundled-python-sdk-245168a56dbd-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.25134.203" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="71622bcc-22da-4d75-ab8b-909dfd5bb47b" name="Changes" comment="" />
+      <created>1776937284587</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1776937284587</updated>
+      <workItem from="1776937285865" duration="1300000" />
+      <workItem from="1776938594061" duration="6301000" />
+      <workItem from="1776944917788" duration="15671000" />
+      <workItem from="1776963056635" duration="373000" />
+      <workItem from="1777019227754" duration="9437000" />
+      <workItem from="1777035567901" duration="173000" />
+      <workItem from="1777368862165" duration="4063000" />
+      <workItem from="1777565999230" duration="2958000" />
+      <workItem from="1778159714237" duration="328000" />
+      <workItem from="1778839085980" duration="2754000" />
+      <workItem from="1779094398979" duration="1370000" />
+      <workItem from="1779096891356" duration="6082000" />
+      <workItem from="1779258229627" duration="11911000" />
+      <workItem from="1780403712853" duration="1510000" />
+      <workItem from="1780910188578" duration="982000" />
+      <workItem from="1781101221995" duration="1877000" />
+      <workItem from="1782735910241" duration="4125000" />
+    </task>
+    <task id="LOCAL-00001" summary="1">
+      <option name="closed" value="true" />
+      <created>1776943726061</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1776943726061</updated>
+    </task>
+    <task id="LOCAL-00002" summary="1">
+      <option name="closed" value="true" />
+      <created>1776944198744</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1776944198744</updated>
+    </task>
+    <task id="LOCAL-00003" summary="feat(cli): add starrocks support">
+      <option name="closed" value="true" />
+      <created>1776962240217</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1776962240217</updated>
+    </task>
+    <task id="LOCAL-00004" summary="feat(cli): add starrocks support">
+      <option name="closed" value="true" />
+      <created>1776963295707</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1776963295707</updated>
+    </task>
+    <task id="LOCAL-00005" summary="feat(cli): add starrocks support">
+      <option name="closed" value="true" />
+      <created>1777019939414</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1777019939414</updated>
+    </task>
+    <task id="LOCAL-00006" summary="feat(cli): add starrocks support">
+      <option name="closed" value="true" />
+      <created>1777020417655</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1777020417655</updated>
+    </task>
+    <task id="LOCAL-00007" summary="feat(cli): add starrocks support">
+      <option name="closed" value="true" />
+      <created>1777031677170</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1777031677170</updated>
+    </task>
+    <task id="LOCAL-00008" summary="feat(cli): add starrocks support">
+      <option name="closed" value="true" />
+      <created>1777032459052</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1777032459052</updated>
+    </task>
+    <task id="LOCAL-00009" summary="feat(cli): add starrocks support">
+      <option name="closed" value="true" />
+      <created>1777567445172</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1777567445172</updated>
+    </task>
+    <task id="LOCAL-00010" summary="feat(cli): add starrocks support">
+      <option name="closed" value="true" />
+      <created>1778839169336</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1778839169336</updated>
+    </task>
+    <task id="LOCAL-00011" summary="feat(cli): add starrocks support">
+      <option name="closed" value="true" />
+      <created>1778839492935</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1778839492935</updated>
+    </task>
+    <task id="LOCAL-00012" summary="feat: make optional 'Max output tokens per model'">
+      <option name="closed" value="true" />
+      <created>1779096579154</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1779096579154</updated>
+    </task>
+    <task id="LOCAL-00013" summary="feat: make optional 'Max output tokens per model'">
+      <option name="closed" value="true" />
+      <created>1779096605437</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1779096605437</updated>
+    </task>
+    <task id="LOCAL-00014" summary="bugfix: fix default project for non-social auth">
+      <option name="closed" value="true" />
+      <created>1779118411069</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1779118411069</updated>
+    </task>
+    <task id="LOCAL-00015" summary="bugfix: fix default project for non-social auth">
+      <option name="closed" value="true" />
+      <created>1779118432573</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1779118432573</updated>
+    </task>
+    <task id="LOCAL-00016" summary="bugfix: fix default project for non-social auth">
+      <option name="closed" value="true" />
+      <created>1779118551337</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1779118551337</updated>
+    </task>
+    <task id="LOCAL-00017" summary="bugfix: fix default project for non-social auth">
+      <option name="closed" value="true" />
+      <created>1779118586923</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1779118586923</updated>
+    </task>
+    <task id="LOCAL-00018" summary="bugfix: fix default project for non-social auth">
+      <option name="closed" value="true" />
+      <created>1779119568498</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1779119568499</updated>
+    </task>
+    <task id="LOCAL-00019" summary="bugfix: fix default project for non-social auth">
+      <option name="closed" value="true" />
+      <created>1779259598900</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1779259598900</updated>
+    </task>
+    <task id="LOCAL-00020" summary="bugfix: fix default project for non-social auth">
+      <option name="closed" value="true" />
+      <created>1779262465604</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1779262465605</updated>
+    </task>
+    <task id="LOCAL-00021" summary="bugfix: fix default project for manually added users">
+      <option name="closed" value="true" />
+      <created>1779262839462</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1779262839462</updated>
+    </task>
+    <task id="LOCAL-00022" summary="add role for new manually added users">
+      <option name="closed" value="true" />
+      <created>1779263111326</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1779263111326</updated>
+    </task>
+    <task id="LOCAL-00023" summary="add role for new manually added users">
+      <option name="closed" value="true" />
+      <created>1779263131070</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1779263131070</updated>
+    </task>
+    <task id="LOCAL-00024" summary="add role for new manually added users">
+      <option name="closed" value="true" />
+      <created>1779267003141</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1779267003141</updated>
+    </task>
+    <task id="LOCAL-00025" summary="add role and project permissions for new manually added users">
+      <option name="closed" value="true" />
+      <created>1779267520394</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1779267520394</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="main-united" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="manually-added-users-fix" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="bugfix/default-project-for-non-social-login" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="add-starrocks" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="feat/flexible-output-tokens" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="main" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="main-united" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="1" />
+    <MESSAGE value="feat(cli): add starrocks support" />
+    <MESSAGE value="feat(cli): add starrocks support" />
+    <MESSAGE value="feat: make optional 'Max output tokens per model'" />
+    <MESSAGE value="bugfix: fix default project for non-social auth" />
+    <MESSAGE value="bugfix: fix default project for manually added users" />
+    <MESSAGE value="add role for new manually added users" />
+    <MESSAGE value="add role for new manually added users and add them permissions for projects" />
+    <MESSAGE value="add role and project permissions for new manually added users" />
+    <MESSAGE value="add role and project permissions for new manually added users" />
+    <option name="LAST_COMMIT_MESSAGE" value="add role and project permissions for new manually added users" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/nao$starrocks.coverage" NAME="starrocks Coverage Results" MODIFIED="1776959393614" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cli/nao_core/config/databases" />
+  </component>
+</project>

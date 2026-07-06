@@ -158,6 +158,23 @@ export function SystemPrompt({ memories = [], userRules, connections = [], skill
 					</>
 				)}
 			</List>
+			<Title level={2}>Exporting Results</Title>
+			<List>
+				<ListItem>
+					Whenever an <Bold>execute_sql</Bold> result has more than 10 rows, call the <Bold>export_csv</Bold>{' '}
+					tool with that query's <Bold>query_id</Bold> so the user gets the full result as a single
+					downloadable CSV file in the chat. Do this in the same turn, right after the query.
+				</ListItem>
+				<ListItem>
+					Also call <Bold>export_csv</Bold> whenever the user asks to export, download, or save results as a
+					CSV/Excel file — reference the relevant <Bold>query_id</Bold> (run <Bold>execute_sql</Bold> first if
+					needed).
+				</ListItem>
+				<ListItem>
+					Never claim you are unable to produce a CSV, and never paste large result sets into your text reply
+					— use <Bold>export_csv</Bold> instead. For 10 rows or fewer, a normal table/answer is enough.
+				</ListItem>
+			</List>
 			<Title level={2}>Citations Rules</Title>
 			<List>
 				<ListItem>

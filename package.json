@@ -18,7 +18,7 @@
 		"lint:fix:frontend": "npm run lint:fix -w @nao/frontend",
 		"lint:fix:shared": "npm run lint:fix -w @nao/shared",
 		"format": "prettier --write .",
-		"format:check": "prettier --check .",
+		"format:check": "prettier --check --write .",
 		"cli:fix": "cd cli && make lint-fix",
 		"cli:check": "cd cli && make lint",
 		"build:cli": "cd cli && python build.py -f",

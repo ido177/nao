@@ -6,6 +6,7 @@ import { DisplayChartToolCall } from './display-chart';
 import { ExecutePythonToolCall } from './execute-python';
 import { ExecuteSandboxedCodeToolCall } from './execute-sandboxed-code';
 import { ExecuteSqlToolCall } from './execute-sql';
+import { ExportCsvToolCall } from './export-csv';
 import { GrepToolCall } from './grep';
 import { ListToolCall } from './list';
 import { McpToolCall } from './mcp';
@@ -33,6 +34,7 @@ const toolComponents: Partial<{
 	execute_python: ExecutePythonToolCall,
 	execute_sandboxed_code: ExecuteSandboxedCodeToolCall,
 	execute_sql: ExecuteSqlToolCall,
+	export_csv: ExportCsvToolCall,
 	grep: GrepToolCall,
 	list: ListToolCall,
 	read: ReadToolCall,

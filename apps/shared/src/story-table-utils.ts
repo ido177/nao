@@ -21,6 +21,20 @@ export function formatCellValue(value: unknown): string {
 	return String(value);
 }
 
+export function toCsv(columns: string[], rows: Record<string, unknown>[]): string {
+	const escape = (value: unknown): string => {
+		if (value === null || value === undefined) {
+			return '';
+		}
+		const str = typeof value === 'object' ? JSON.stringify(value) : String(value);
+		return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+	};
+
+	const header = columns.map(escape).join(',');
+	const body = rows.map((row) => columns.map((column) => escape(row[column])).join(','));
+	return [header, ...body].join('\r\n');
+}
+
 export function isNumericColumn(rows: Record<string, unknown>[], column: string): boolean {
 	return rows
 		.filter((row) => row[column] !== null && row[column] !== undefined)

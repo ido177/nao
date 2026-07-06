@@ -8,6 +8,7 @@ import displayChart from './display-chart';
 import executePython from './execute-python';
 import executeSandboxedCode from './execute-sandboxed-code';
 import executeSql from './execute-sql';
+import exportCsv from './export-csv';
 import grep from './grep';
 import list from './list';
 import read from './read';
@@ -23,6 +24,7 @@ export const tools = {
 	...(executePython && { execute_python: executePython }),
 	...(executeSandboxedCode && { execute_sandboxed_code: executeSandboxedCode }),
 	execute_sql: executeSql,
+	export_csv: exportCsv,
 	read_query_result: readQueryResult,
 	grep,
 	list,
