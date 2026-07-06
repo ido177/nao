@@ -50,7 +50,6 @@ export const testRoutes = async (app: App) => {
 							agentSettings: null,
 							envVars: {},
 							azureAccessToken: null,
-							queryResults: new Map(),
 						},
 					);
 					const { data } = await testAgentService.runVerification(

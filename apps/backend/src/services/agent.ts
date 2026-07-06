@@ -168,7 +168,6 @@ export class AgentService {
 			agentSettings,
 			envVars,
 			azureAccessToken,
-			queryResults: new Map(),
 		};
 	}
 

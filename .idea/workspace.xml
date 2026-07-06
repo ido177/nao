@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="71622bcc-22da-4d75-ab8b-909dfd5bb47b" name="Changes" comment="add role and project permissions for new manually added users">
-      <change beforePath="$PROJECT_DIR$/apps/backend/src/components/ai/system-prompt.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/apps/backend/src/components/ai/system-prompt.tsx" afterDir="false" />
-    </list>
+    <list default="true" id="71622bcc-22da-4d75-ab8b-909dfd5bb47b" name="Changes" comment="spill data to disk" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -93,6 +91,7 @@
       <workItem from="1780910188578" duration="982000" />
       <workItem from="1781101221995" duration="1877000" />
       <workItem from="1782735910241" duration="4125000" />
+      <workItem from="1783331685839" duration="970000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
@@ -294,7 +293,39 @@
       <option name="project" value="LOCAL" />
       <updated>1779267520394</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="add csv exporting when result is bigger than 10 rows">
+      <option name="closed" value="true" />
+      <created>1783331823028</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1783331823028</updated>
+    </task>
+    <task id="LOCAL-00027" summary="add csv exporting when result is bigger than 10 rows">
+      <option name="closed" value="true" />
+      <created>1783331848337</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1783331848337</updated>
+    </task>
+    <task id="LOCAL-00028" summary="spill data to disk">
+      <option name="closed" value="true" />
+      <created>1783347154652</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1783347154652</updated>
+    </task>
+    <task id="LOCAL-00029" summary="spill data to disk">
+      <option name="closed" value="true" />
+      <created>1783347178966</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1783347178966</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -374,7 +405,9 @@
     <MESSAGE value="add role for new manually added users and add them permissions for projects" />
     <MESSAGE value="add role and project permissions for new manually added users" />
     <MESSAGE value="add role and project permissions for new manually added users" />
-    <option name="LAST_COMMIT_MESSAGE" value="add role and project permissions for new manually added users" />
+    <MESSAGE value="add csv exporting when result is bigger than 10 rows" />
+    <MESSAGE value="spill data to disk" />
+    <option name="LAST_COMMIT_MESSAGE" value="spill data to disk" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/nao$starrocks.coverage" NAME="starrocks Coverage Results" MODIFIED="1776959393614" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/cli/nao_core/config/databases" />

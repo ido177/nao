@@ -1,7 +1,7 @@
 import type { exportCsv } from '@nao/shared/tools';
 import { exportCsv as schemas } from '@nao/shared/tools';
 
-import { getQueryResult } from '../../services/query-result.service';
+import { getQueryResultMeta } from '../../services/query-result.service';
 import { createTool } from '../../utils/tools';
 
 export default createTool<exportCsv.Input, exportCsv.Output>({
@@ -10,8 +10,8 @@ export default createTool<exportCsv.Input, exportCsv.Output>({
 	inputSchema: schemas.InputSchema,
 	outputSchema: schemas.OutputSchema,
 	execute: async ({ query_id, filename }, context) => {
-		const stored = await getQueryResult(context, query_id);
-		if (!stored) {
+		const meta = await getQueryResultMeta(context.chatId, query_id);
+		if (!meta) {
 			return {
 				_version: '1' as const,
 				success: false,
@@ -22,8 +22,9 @@ export default createTool<exportCsv.Input, exportCsv.Output>({
 		return {
 			_version: '1' as const,
 			success: true,
-			row_count: stored.data.length,
+			row_count: meta.row_count,
 			filename: filename ?? query_id,
+			download_url: `/q/${encodeURIComponent(context.chatId)}/${encodeURIComponent(query_id)}.csv`,
 		};
 	},
 	toModelOutput: ({ output }) => ({

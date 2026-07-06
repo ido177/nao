@@ -11,9 +11,9 @@ export const ExecuteSqlOutput = ({ output, maxRows = MAX_ROWS }: { output: execu
 		return <Block>The query was successfully executed and returned no rows.</Block>;
 	}
 
-	const isTruncated = output.data.length > maxRows;
+	const isTruncated = output.row_count > maxRows;
 	const visibleRows = isTruncated ? output.data.slice(0, maxRows) : output.data;
-	const remainingRows = isTruncated ? output.data.length - maxRows : 0;
+	const remainingRows = isTruncated ? output.row_count - maxRows : 0;
 
 	return (
 		<Block>

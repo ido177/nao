@@ -18,6 +18,7 @@ import { memoryRoutes } from './memory.routes';
 import { organizationRoutes } from './organization.routes';
 import { posthogRoutes } from './posthog.routes';
 import { projectRoutes } from './project.routes';
+import { queryResultRoutes } from './query-result.routes';
 import { sharedChatRoutes } from './shared-chat.routes';
 import { sharedStoryRoutes } from './shared-story.routes';
 import { skillRoutes } from './skill.routes';
@@ -43,6 +44,7 @@ export const trpcRouter = router({
 	log: logRoutes,
 	posthog: posthogRoutes,
 	project: projectRoutes,
+	queryResult: queryResultRoutes,
 	storyShare: sharedStoryRoutes,
 	story: storyRoutes,
 	usage: usageRoutes,

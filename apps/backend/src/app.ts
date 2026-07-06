@@ -11,6 +11,11 @@ import { fileURLToPath } from 'url';
 
 import { env, isCloud } from './env';
 import { LOG_CLEANUP_JOB_NAME, logCleanupHandler, runLogCleanup } from './handlers/log-cleanup.handler';
+import {
+	QUERY_RESULT_CLEANUP_JOB_NAME,
+	queryResultCleanupHandler,
+	runQueryResultCleanup,
+} from './handlers/query-result-cleanup.handler';
 import { mcpServerRoutes } from './mcp/routes';
 import { ensureOrganizationSetup } from './queries/organization.queries';
 import { agentRoutes } from './routes/agent';
@@ -20,6 +25,7 @@ import { chartRoutes } from './routes/chart';
 import { deployRoutes } from './routes/deploy';
 import { githubRoutes } from './routes/github';
 import { imageRoutes } from './routes/image';
+import { queryResultRoutes } from './routes/query-result';
 import { slackRoutes } from './routes/slack';
 import { teamsRoutes } from './routes/teams';
 import { telegramRoutes } from './routes/telegram';
@@ -150,6 +156,10 @@ app.register(imageRoutes, {
 	prefix: '/i',
 });
 
+app.register(queryResultRoutes, {
+	prefix: '/q',
+});
+
 app.register(brandingRoutes, {
 	prefix: '/branding',
 });
@@ -253,6 +263,8 @@ const isReservedBackendPath = (url: string) => {
 		pathname.startsWith('/c/') ||
 		pathname === '/i' ||
 		pathname.startsWith('/i/') ||
+		pathname === '/q' ||
+		pathname.startsWith('/q/') ||
 		pathname === '/branding' ||
 		pathname.startsWith('/branding/') ||
 		pathname === '/mcp' ||
@@ -293,6 +305,19 @@ export const startServer = async (opts: { port: number; host: string }) => {
 	});
 	registerJob(LOG_CLEANUP_JOB_NAME, logCleanupHandler);
 	await ensureRecurring({ name: LOG_CLEANUP_JOB_NAME, cron: '0 3 * * *', uniqueKey: LOG_CLEANUP_JOB_NAME });
+
+	void runQueryResultCleanup().catch((err) => {
+		logger.error(`Query result cleanup failed: ${err instanceof Error ? err.message : String(err)}`, {
+			source: 'system',
+		});
+	});
+	registerJob(QUERY_RESULT_CLEANUP_JOB_NAME, queryResultCleanupHandler);
+	await ensureRecurring({
+		name: QUERY_RESULT_CLEANUP_JOB_NAME,
+		cron: '0 4 * * *',
+		uniqueKey: QUERY_RESULT_CLEANUP_JOB_NAME,
+	});
+
 	startScheduler();
 	await startLicenseHeartbeat();
 

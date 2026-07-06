@@ -19,6 +19,8 @@ export const OutputSchema = z.object({
 	row_count: z.number().optional(),
 	/** Base name (without extension) used for the downloaded file. */
 	filename: z.string().optional(),
+	/** Relative URL the UI uses to stream the full CSV from the server. */
+	download_url: z.string().optional(),
 	error: z.string().optional(),
 });
 

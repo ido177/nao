@@ -70,6 +70,9 @@ const envSchema = z.object({
 	NAO_DEFAULT_PROJECT_PATH: z.string().optional(),
 	NAO_MODE: z.enum(['self-hosted', 'cloud']).default('self-hosted'),
 	NAO_PROJECTS_DIR: z.string().default('./projects'),
+	NAO_QUERY_RESULT_DIR: z.string().optional(),
+	/** How long disk-backed query results are retained before the cleanup job prunes them. */
+	NAO_QUERY_RESULT_TTL_DAYS: z.coerce.number().positive().default(1),
 	NAO_CORE_VERSION: z.string().optional(),
 
 	NAO_LICENSE: z

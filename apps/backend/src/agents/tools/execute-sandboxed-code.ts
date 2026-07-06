@@ -1,12 +1,14 @@
 import { executeSandboxedCode as schemas } from '@nao/shared/tools';
 import crypto from 'crypto';
 import fs from 'fs';
+import { createWriteStream } from 'fs';
 import os from 'os';
 import path from 'path';
+import { pipeline } from 'stream/promises';
 
 import { ChatImage, getImagesByChatId } from '../../queries/image.queries';
-import { getQueryResult } from '../../services/query-result.service';
-import { QueryResult, ToolContext } from '../../types/tools';
+import { queryResultExists, streamQueryResultCsv } from '../../services/query-result.service';
+import { ToolContext } from '../../types/tools';
 import { createTool, shouldExcludeEntry } from '../../utils/tools';
 
 let boxliteModule: typeof import('@boxlite-ai/boxlite') | null = null;
@@ -55,23 +57,6 @@ function registerSandbox(box: CodeBox): string {
 	const timeout = setTimeout(() => evictSandbox(id), SANDBOX_TTL_MS);
 	sandboxPool.set(id, { box, timeout });
 	return id;
-}
-
-function queryResultToCsv({ columns, data }: QueryResult): string {
-	const escapeCsvValue = (val: unknown): string => {
-		if (val === null || val === undefined) {
-			return '';
-		}
-		const str = String(val);
-		if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-			return `"${str.replace(/"/g, '""')}"`;
-		}
-		return str;
-	};
-
-	const header = columns.map(escapeCsvValue).join(',');
-	const rows = data.map((row) => columns.map((col) => escapeCsvValue(row[col])).join(','));
-	return [header, ...rows].join('\n');
 }
 
 async function getOrCreateSandbox(
@@ -227,8 +212,7 @@ async function executeSandboxedCode(
 
 		if (data_files?.length) {
 			for (const { query_id, filename } of data_files) {
-				const result = await getQueryResult(context, query_id);
-				if (!result) {
+				if (!(await queryResultExists(context.chatId, query_id))) {
 					return {
 						sandbox_id: id,
 						stdout: '',
@@ -237,9 +221,9 @@ async function executeSandboxedCode(
 					};
 				}
 
-				const csvContent = queryResultToCsv(result);
+				// Stream the CSV to disk row by row to avoid materializing large results in memory.
 				const hostPath = path.join(tmpDir, filename);
-				fs.writeFileSync(hostPath, csvContent, 'utf-8');
+				await pipeline(streamQueryResultCsv(context.chatId, query_id), createWriteStream(hostPath, 'utf-8'));
 				await box.copyIn(hostPath, `${WORKING_DIR}/${filename}`);
 			}
 		}

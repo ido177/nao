@@ -6,6 +6,7 @@ import type { SearchChatResult } from '../queries/chat.queries';
 import * as chatQueries from '../queries/chat.queries';
 import { agentService } from '../services/agent';
 import { posthog, PostHogEvent } from '../services/posthog';
+import * as queryResultStore from '../services/query-result-store';
 import type { ContextUsage, ForkMetadata, UIChat } from '../types/chat';
 import { llmProviderSchema } from '../types/llm';
 import { getChatContextUsage } from '../utils/chat-context-usage';
@@ -46,6 +47,7 @@ export const chatRoutes = {
 		.input(z.object({ chatId: z.string() }))
 		.mutation(async ({ input, ctx }): Promise<void> => {
 			const { projectId } = await chatQueries.deleteChat(input.chatId);
+			await queryResultStore.remove(input.chatId).catch(() => undefined);
 			posthog.capture(ctx.user.id, PostHogEvent.ChatDeleted, { project_id: projectId, chat_id: input.chatId });
 		}),
 

@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { buildChart, labelize } from '@nao/shared';
 import { Download, FilePlus } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOptionalAgentContext } from '../../contexts/agent.provider';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '../ui/chart';
 import { TextShimmer } from '../ui/text-shimmer';
@@ -74,7 +74,9 @@ export const DisplayChartToolCall = ({
 		}
 	};
 
-	const sourceData = useMemo(() => {
+	// Preview embedded in the message (first 100 rows) — used before the full
+	// dataset loads and as a fallback for old chats / shared views without a chatId.
+	const previewData = useMemo(() => {
 		if (!config?.query_id) {
 			return null;
 		}
@@ -88,6 +90,14 @@ export const DisplayChartToolCall = ({
 		}
 		return null;
 	}, [messages, config?.query_id]);
+
+	const { data: serverData } = useQuery({
+		...trpc.queryResult.getData.queryOptions({ chatId: chatId ?? '', queryId: config?.query_id ?? '' }),
+		enabled: !!chatId && !!config?.query_id,
+		staleTime: Infinity,
+	});
+
+	const sourceData = serverData ?? previewData;
 
 	const filteredData = useMemo(() => {
 		if (!sourceData?.data || !config) {

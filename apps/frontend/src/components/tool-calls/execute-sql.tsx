@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Streamdown } from 'streamdown';
-import { ArrowUpRight, Code, Copy, Table as TableIcon } from 'lucide-react';
+import { ArrowUpRight, Code, Copy, Download, Table as TableIcon } from 'lucide-react';
 import { ToolCallWrapper } from './tool-call-wrapper';
 import { TableDisplay } from './display-table';
 import type { ToolCallComponentProps } from '.';
 import { useSidePanel } from '@/contexts/side-panel';
 import { useToolCallContext } from '@/contexts/tool-call';
 import { SidePanelContent } from '@/components/side-panel/sql-editor';
+import { useChatId } from '@/hooks/use-chat-id';
 
 type ViewMode = 'results' | 'query';
 
@@ -14,6 +15,7 @@ export const ExecuteSqlToolCall = ({ toolPart: { output, input, state } }: ToolC
 	const [viewMode, setViewMode] = useState<ViewMode>('results');
 	const { isSettled } = useToolCallContext();
 	const { open: openSidePanel } = useSidePanel();
+	const chatId = useChatId();
 
 	const actions = [
 		{
@@ -68,12 +70,29 @@ export const ExecuteSqlToolCall = ({ toolPart: { output, input, state } }: ToolC
 					</Streamdown>
 				</div>
 			) : output ? (
-				<TableDisplay
-					data={output.data as Record<string, unknown>[]}
-					columns={output.columns}
-					tableContainerClassName='max-h-80 rounded-none border-0 bg-transparent'
-					showRowCount={false}
-				/>
+				<>
+					<TableDisplay
+						data={output.data as Record<string, unknown>[]}
+						columns={output.columns}
+						tableContainerClassName='max-h-80 rounded-none border-0 bg-transparent'
+						showRowCount={false}
+					/>
+					{output.truncated && chatId ? (
+						<div className='flex items-center justify-between gap-2 px-3 py-2 text-xs text-muted-foreground'>
+							<span>
+								Showing first {output.data.length} of {output.row_count} rows
+							</span>
+							<a
+								href={`/q/${encodeURIComponent(chatId)}/${encodeURIComponent(output.id)}.csv`}
+								download={`${output.id}.csv`}
+								className='inline-flex items-center gap-1 text-foreground hover:underline'
+							>
+								<Download className='size-3' />
+								Download CSV
+							</a>
+						</div>
+					) : null}
+				</>
 			) : (
 				<div className='p-4 text-center text-foreground/50 text-sm'>Executing query...</div>
 			)}

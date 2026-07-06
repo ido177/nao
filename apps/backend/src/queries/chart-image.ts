@@ -4,6 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import s from '../db/abstractSchema';
 import { db } from '../db/db';
 import dbConfig, { Dialect } from '../db/dbConfig';
+import { getQueryResult } from '../services/query-result.service';
 import { takeFirstOrThrow } from '../utils/queries';
 
 export const getChartById = async (id: string): Promise<string> => {
@@ -51,8 +52,27 @@ export const getExecuteSqlPartByQueryId = async (
 };
 
 export const getChartDataByQueryId = async (queryId: string): Promise<executeSql.Output['data']> => {
-	const result = await getExecuteSqlPartByQueryId(queryId);
-	return result.toolOutput.data;
+	const jsonIdFilter =
+		dbConfig.dialect === Dialect.Postgres
+			? sql`${s.messagePart.toolOutput}->>'id' = ${queryId}`
+			: sql`json_extract(${s.messagePart.toolOutput}, '$.id') = ${queryId}`;
+
+	const result = await takeFirstOrThrow(
+		db
+			.select({ chatId: s.chatMessage.chatId, toolOutput: s.messagePart.toolOutput })
+			.from(s.messagePart)
+			.innerJoin(s.chatMessage, eq(s.messagePart.messageId, s.chatMessage.id))
+			.where(jsonIdFilter)
+			.execute(),
+	);
+
+	// Prefer the full result from the disk store; fall back to the preview persisted
+	// in the tool output (old chats keep the full data there).
+	const full = await getQueryResult(result.chatId, queryId);
+	if (full) {
+		return full.data;
+	}
+	return executeSql.OutputSchema.parse(result.toolOutput).data;
 };
 
 export const saveChart = async (toolCallId: string, data: string): Promise<string> => {

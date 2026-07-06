@@ -2,7 +2,7 @@ import type { readQueryResult } from '@nao/shared/tools';
 import { readQueryResult as schemas } from '@nao/shared/tools';
 
 import { ReadQueryResultOutput, renderToModelOutput } from '../../components/tool-outputs';
-import { getQueryResult } from '../../services/query-result.service';
+import { readQueryResultPage } from '../../services/query-result.service';
 import { createTool } from '../../utils/tools';
 
 const DEFAULT_LIMIT = 20;
@@ -13,21 +13,19 @@ export default createTool<readQueryResult.Input, readQueryResult.Output>({
 	inputSchema: schemas.InputSchema,
 	outputSchema: schemas.OutputSchema,
 	execute: async ({ query_id, offset = 0, limit = DEFAULT_LIMIT }, context) => {
-		const stored = await getQueryResult(context, query_id);
-		if (!stored) {
+		const page = await readQueryResultPage(context.chatId, query_id, offset, limit);
+		if (!page) {
 			throw new Error(
 				`Query result not found for id "${query_id}". The id must come from an execute_sql tool call earlier in this chat.`,
 			);
 		}
 
-		const data = stored.data.slice(offset, offset + limit);
-
 		return {
 			_version: '1' as const,
 			id: query_id as `query_${string}`,
-			columns: stored.columns,
-			data,
-			row_count: stored.data.length,
+			columns: page.columns,
+			data: page.data,
+			row_count: page.row_count,
 			offset,
 			limit,
 		};

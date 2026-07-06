@@ -1,9 +1,12 @@
 import { memo, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { UIMessage } from '@nao/backend/chat';
 import type { displayChart } from '@nao/shared/tools';
 import { useOptionalAgentContext } from '@/contexts/agent.provider';
 import { ChartDisplay } from '@/components/tool-calls/display-chart';
 import { sortByDateKey } from '@/lib/charts.utils';
+import { useChatId } from '@/hooks/use-chat-id';
+import { trpc } from '@/main';
 
 interface ChartBlock {
 	queryId: string;
@@ -16,8 +19,9 @@ interface ChartBlock {
 
 export const StoryChartEmbed = memo(function StoryChartEmbed({ chart }: { chart: ChartBlock }) {
 	const agent = useOptionalAgentContext();
+	const chatId = useChatId();
 
-	const sourceData = useMemo(() => {
+	const previewData = useMemo(() => {
 		const findInMessages = (messages: UIMessage[]) => {
 			for (const message of messages) {
 				for (const part of message.parts) {
@@ -31,6 +35,14 @@ export const StoryChartEmbed = memo(function StoryChartEmbed({ chart }: { chart:
 
 		return findInMessages(agent?.messages ?? []);
 	}, [agent?.messages, chart.queryId]);
+
+	const { data: serverData } = useQuery({
+		...trpc.queryResult.getData.queryOptions({ chatId: chatId ?? '', queryId: chart.queryId }),
+		enabled: !!chatId && !!chart.queryId,
+		staleTime: Infinity,
+	});
+
+	const sourceData = serverData ?? previewData;
 
 	const data = useMemo(
 		() =>

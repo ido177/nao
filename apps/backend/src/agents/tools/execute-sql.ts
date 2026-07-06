@@ -3,9 +3,13 @@ import { executeSql as schemas } from '@nao/shared/tools';
 
 import { ExecuteSqlOutput, renderToModelOutput } from '../../components/tool-outputs';
 import { env } from '../../env';
+import * as queryResultStore from '../../services/query-result-store';
 import { ToolContext } from '../../types/tools';
 import { isReadOnlySqlQuery } from '../../utils/sql-filter';
 import { createTool } from '../../utils/tools';
+
+/** Number of rows embedded in the tool output for a quick UI preview; the full result lives on disk. */
+export const PREVIEW_ROWS = 100;
 
 export async function executeQuery(
 	{ sql_query, database_id }: executeSql.Input,
@@ -44,12 +48,24 @@ export async function executeQuery(
 	const data = await response.json();
 	const id = `query_${crypto.randomUUID().slice(0, 8)}` as const;
 
-	context.queryResults.set(id, { columns: data.columns, data: data.data });
+	const rows: Record<string, unknown>[] = data.data ?? [];
+	const columns: string[] = data.columns ?? [];
+	const rowCount: number = data.row_count ?? rows.length;
+
+	// Persist the full result to disk and keep only a bounded preview in memory /
+	// in the streamed + persisted tool output to avoid holding large result sets.
+	await queryResultStore.write(context.chatId, id, { columns, data: rows });
+
+	const preview = rows.slice(0, PREVIEW_ROWS);
 
 	return {
 		_version: '1',
-		...data,
 		id,
+		columns,
+		row_count: rowCount,
+		dialect: data.dialect,
+		data: preview,
+		truncated: rowCount > preview.length,
 	};
 }
 

@@ -58,7 +58,6 @@ async function buildMcpToolContext(ctx: McpContext): Promise<ToolContext> {
 		agentSettings: null,
 		envVars,
 		azureAccessToken,
-		queryResults: new Map(),
 	};
 }
 
