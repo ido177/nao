@@ -1,3 +1,6 @@
+import readline from 'node:readline';
+import { Readable } from 'node:stream';
+
 import type { executeSql } from '@nao/shared/tools';
 import { executeSql as schemas } from '@nao/shared/tools';
 
@@ -10,6 +13,11 @@ import { createTool } from '../../utils/tools';
 
 /** Number of rows embedded in the tool output for a quick UI preview; the full result lives on disk. */
 export const PREVIEW_ROWS = 100;
+
+interface StreamMeta {
+	columns?: string[];
+	dialect?: string;
+}
 
 export async function executeQuery(
 	{ sql_query, database_id }: executeSql.Input,
@@ -26,7 +34,7 @@ export async function executeQuery(
 	}
 
 	const envVars = context.envVars;
-	const response = await fetch(`http://localhost:${env.FASTAPI_PORT}/execute_sql`, {
+	const response = await fetch(`http://localhost:${env.FASTAPI_PORT}/execute_sql_stream`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -40,30 +48,57 @@ export async function executeQuery(
 		}),
 	});
 
-	if (!response.ok) {
+	if (!response.ok || !response.body) {
 		const errorData = await response.json().catch(() => ({ detail: response.statusText }));
 		throw new Error(`Error executing SQL query: ${JSON.stringify(errorData.detail)}`);
 	}
 
-	const data = await response.json();
 	const id = `query_${crypto.randomUUID().slice(0, 8)}` as const;
 
-	const rows: Record<string, unknown>[] = data.data ?? [];
-	const columns: string[] = data.columns ?? [];
-	const rowCount: number = data.row_count ?? rows.length;
+	// Stream NDJSON rows straight to disk. Only a bounded preview and counters
+	// stay in memory, so peak memory is independent of the result size.
+	const bodyStream = Readable.fromWeb(response.body as unknown as Parameters<typeof Readable.fromWeb>[0]);
+	const rl = readline.createInterface({ input: bodyStream, crlfDelay: Infinity });
+	let columns: string[] = [];
+	let dialect: string | undefined;
+	let rowCount = 0;
+	const preview: Record<string, unknown>[] = [];
+	let writer: queryResultStore.QueryResultWriter | null = null;
 
-	// Persist the full result to disk and keep only a bounded preview in memory /
-	// in the streamed + persisted tool output to avoid holding large result sets.
-	await queryResultStore.write(context.chatId, id, { columns, data: rows });
+	try {
+		for await (const line of rl) {
+			if (!line) {
+				continue;
+			}
+			if (!writer) {
+				const meta = JSON.parse(line) as StreamMeta;
+				columns = meta.columns ?? [];
+				dialect = meta.dialect;
+				writer = await queryResultStore.createWriter(context.chatId, id);
+				continue;
+			}
+			if (preview.length < PREVIEW_ROWS) {
+				preview.push(JSON.parse(line) as Record<string, unknown>);
+			}
+			rowCount += 1;
+			await writer.writeRow(line);
+		}
+	} finally {
+		rl.close();
+	}
 
-	const preview = rows.slice(0, PREVIEW_ROWS);
+	// Empty stream (no meta line) should never happen, but guard against it.
+	if (!writer) {
+		writer = await queryResultStore.createWriter(context.chatId, id);
+	}
+	await writer.close(columns, rowCount);
 
 	return {
 		_version: '1',
 		id,
 		columns,
 		row_count: rowCount,
-		dialect: data.dialect,
+		dialect,
 		data: preview,
 		truncated: rowCount > preview.length,
 	};

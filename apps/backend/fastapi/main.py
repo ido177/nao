@@ -1,6 +1,8 @@
+import json
 import math
 import os
 import sys
+from collections.abc import Iterator
 from contextlib import asynccontextmanager
 from datetime import date, datetime
 from decimal import Decimal
@@ -12,6 +14,7 @@ import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 load_dotenv()
@@ -219,66 +222,75 @@ async def refresh_context():
         )
 
 
-@app.post("/execute_sql", response_model=ExecuteSQLResponse)
-async def execute_sql(request: ExecuteSQLRequest):
-    try:
-        project_path = Path(request.nao_project_folder)
-        config = NaoConfig.try_load(
-            project_path,
-            raise_on_error=True,
-            extra_env=request.env_vars,
+def _resolve_and_execute(request: ExecuteSQLRequest) -> tuple[pd.DataFrame, str | None]:
+    """Resolve the target database from the project config and run the SQL.
+
+    Returns the result DataFrame and the database dialect. Raises HTTPException
+    for user-facing errors (missing/ambiguous database, missing auth token).
+    """
+    project_path = Path(request.nao_project_folder)
+    config = NaoConfig.try_load(
+        project_path,
+        raise_on_error=True,
+        extra_env=request.env_vars,
+    )
+    assert config is not None
+
+    if len(config.databases) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No databases configured in nao_config.yaml",
         )
-        assert config is not None
 
-        if len(config.databases) == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="No databases configured in nao_config.yaml",
-            )
-
-        if len(config.databases) == 1:
-            db_config = config.databases[0]
-        elif request.database_id:
-            db_config = next(
-                (db for db in config.databases if db.name == request.database_id),
-                None,
-            )
-            if db_config is None:
-                available_databases = [db.name for db in config.databases]
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "message": f"Database '{request.database_id}' not found",
-                        "available_databases": available_databases,
-                    },
-                )
-        else:
+    if len(config.databases) == 1:
+        db_config = config.databases[0]
+    elif request.database_id:
+        db_config = next(
+            (db for db in config.databases if db.name == request.database_id),
+            None,
+        )
+        if db_config is None:
             available_databases = [db.name for db in config.databases]
             raise HTTPException(
                 status_code=400,
                 detail={
-                    "message": "Multiple databases configured. Please specify database_id.",
+                    "message": f"Database '{request.database_id}' not found",
                     "available_databases": available_databases,
                 },
             )
+    else:
+        available_databases = [db.name for db in config.databases]
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Multiple databases configured. Please specify database_id.",
+                "available_databases": available_databases,
+            },
+        )
 
-        auth_mode_value = getattr(getattr(db_config, "auth_mode", None), "value", None)
+    auth_mode_value = getattr(getattr(db_config, "auth_mode", None), "value", None)
 
-        if auth_mode_value == "azure_entra_id":
-            if not request.azure_access_token:
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "azure_access_token is required when the database auth_mode is "
-                        "'azure_entra_id'. Runtime queries must use the end user's access "
-                        "token; any configured user/password is only used by nao sync."
-                    ),
-                )
-            df = db_config.execute_sql_with_token(
-                request.sql, request.azure_access_token
+    if auth_mode_value == "azure_entra_id":
+        if not request.azure_access_token:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "azure_access_token is required when the database auth_mode is "
+                    "'azure_entra_id'. Runtime queries must use the end user's access "
+                    "token; any configured user/password is only used by nao sync."
+                ),
             )
-        else:
-            df = db_config.execute_sql(request.sql)
+        df = db_config.execute_sql_with_token(request.sql, request.azure_access_token)
+    else:
+        df = db_config.execute_sql(request.sql)
+
+    return df, db_config.type
+
+
+@app.post("/execute_sql", response_model=ExecuteSQLResponse)
+async def execute_sql(request: ExecuteSQLRequest):
+    try:
+        df, dialect = _resolve_and_execute(request)
 
         data = [
             {k: _convert_value(v) for k, v in row.items()}
@@ -289,7 +301,7 @@ async def execute_sql(request: ExecuteSQLRequest):
             data=data,
             row_count=len(data),
             columns=[str(c) for c in df.columns.tolist()],
-            dialect=db_config.type,
+            dialect=dialect,
         )
     except HTTPException:
         raise
@@ -297,6 +309,34 @@ async def execute_sql(request: ExecuteSQLRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/execute_sql_stream")
+async def execute_sql_stream(request: ExecuteSQLRequest):
+    """Stream query results as NDJSON to avoid materializing the full result set.
+
+    The first line is metadata (`{"columns": [...], "dialect": ...}`); each
+    subsequent line is one result row. The DataFrame is built eagerly so query
+    errors surface as normal HTTP error responses before streaming begins.
+    """
+    try:
+        df, dialect = _resolve_and_execute(request)
+    except HTTPException:
+        raise
+    except NaoConfigError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    columns = [str(c) for c in df.columns.tolist()]
+
+    def generate() -> Iterator[str]:
+        yield json.dumps({"columns": columns, "dialect": dialect}, ensure_ascii=False) + "\n"
+        for row in df.itertuples(index=False, name=None):
+            record = {col: _convert_value(v) for col, v in zip(columns, row)}
+            yield json.dumps(record, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(generate(), media_type="application/x-ndjson")
 
 
 if __name__ == "__main__":

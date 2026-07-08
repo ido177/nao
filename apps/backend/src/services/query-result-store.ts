@@ -10,15 +10,25 @@ import { QueryResult } from '../types/tools';
 /**
  * Disk-backed store for SQL query results.
  *
- * Results are written as JSONL: the first line holds metadata
- * (`{ columns, row_count }`), each subsequent line is one row. This keeps the
- * backend from holding whole result sets in memory — writes stream row by row
- * and reads page/stream without materializing the full dataset.
+ * Each result is two files: `<queryId>.jsonl` holds one JSON row per line, and a
+ * sidecar `<queryId>.meta.json` holds `{ columns, row_count }`. The sidecar is
+ * written last, so it also marks the write as complete — a partially written
+ * result (process died mid-stream) has no sidecar and reads as absent.
+ *
+ * Writes stream row by row and reads page/stream without materializing the full
+ * dataset, keeping backend memory flat regardless of result size.
  */
 
 interface QueryResultMeta {
 	columns: string[];
 	row_count: number;
+}
+
+export interface QueryResultWriter {
+	/** Appends one already-serialized JSON row (without a trailing newline). */
+	writeRow(jsonLine: string): Promise<void>;
+	/** Flushes remaining rows and writes the sidecar meta (marks the result complete). */
+	close(columns: string[], rowCount: number): Promise<void>;
 }
 
 const baseDir = (): string => env.NAO_QUERY_RESULT_DIR || path.join(os.tmpdir(), 'nao-query-results');
@@ -27,31 +37,41 @@ const safeSegment = (value: string): string => value.replace(/[^a-zA-Z0-9_-]/g, 
 
 const chatDir = (chatId: string): string => path.join(baseDir(), safeSegment(chatId));
 
-const filePath = (chatId: string, queryId: string): string =>
+const dataPath = (chatId: string, queryId: string): string =>
 	path.join(chatDir(chatId), `${safeSegment(queryId)}.jsonl`);
 
+const metaPath = (chatId: string, queryId: string): string =>
+	path.join(chatDir(chatId), `${safeSegment(queryId)}.meta.json`);
+
+/** Opens a streaming writer that appends rows to disk without buffering the full result. */
+export async function createWriter(chatId: string, queryId: string): Promise<QueryResultWriter> {
+	await fs.mkdir(chatDir(chatId), { recursive: true });
+	const stream = createWriteStream(dataPath(chatId, queryId), { encoding: 'utf-8' });
+
+	return {
+		writeRow: (jsonLine) => writeLine(stream, jsonLine),
+		close: async (columns, rowCount) => {
+			await new Promise<void>((resolve, reject) => {
+				stream.end((err?: Error | null) => (err ? reject(err) : resolve()));
+			});
+			const meta: QueryResultMeta = { columns, row_count: rowCount };
+			await fs.writeFile(metaPath(chatId, queryId), JSON.stringify(meta), 'utf-8');
+		},
+	};
+}
+
+/** Convenience writer for callers that already hold the full result in memory. */
 export async function write(chatId: string, queryId: string, result: QueryResult): Promise<void> {
-	const dir = chatDir(chatId);
-	await fs.mkdir(dir, { recursive: true });
-
-	const meta: QueryResultMeta = { columns: result.columns, row_count: result.data.length };
-	const stream = createWriteStream(filePath(chatId, queryId), { encoding: 'utf-8' });
-
-	try {
-		await writeLine(stream, JSON.stringify(meta));
-		for (const row of result.data) {
-			await writeLine(stream, JSON.stringify(row));
-		}
-	} finally {
-		await new Promise<void>((resolve, reject) => {
-			stream.end((err?: Error | null) => (err ? reject(err) : resolve()));
-		});
+	const writer = await createWriter(chatId, queryId);
+	for (const row of result.data) {
+		await writer.writeRow(JSON.stringify(row));
 	}
+	await writer.close(result.columns, result.data.length);
 }
 
 export async function exists(chatId: string, queryId: string): Promise<boolean> {
 	try {
-		await fs.access(filePath(chatId, queryId));
+		await fs.access(metaPath(chatId, queryId));
 		return true;
 	} catch {
 		return false;
@@ -59,39 +79,37 @@ export async function exists(chatId: string, queryId: string): Promise<boolean> 
 }
 
 export async function getMeta(chatId: string, queryId: string): Promise<QueryResultMeta | null> {
-	const firstLine = await readFirstLine(filePath(chatId, queryId));
-	if (!firstLine) {
+	try {
+		const raw = await fs.readFile(metaPath(chatId, queryId), 'utf-8');
+		return JSON.parse(raw) as QueryResultMeta;
+	} catch {
 		return null;
 	}
-	return JSON.parse(firstLine) as QueryResultMeta;
 }
 
-/** Reads a page of rows. `limit` undefined reads to the end (optionally capped by `limit`). */
+/** Reads a page of rows. `limit` undefined reads to the end. */
 export async function readPage(
 	chatId: string,
 	queryId: string,
 	offset = 0,
 	limit?: number,
 ): Promise<QueryResult | null> {
-	const file = filePath(chatId, queryId);
-	if (!(await exists(chatId, queryId))) {
+	const meta = await getMeta(chatId, queryId);
+	if (!meta) {
 		return null;
 	}
 
 	const rows: Record<string, unknown>[] = [];
-	let columns: string[] = [];
-	let index = -1; // -1 = meta line
+	let index = 0;
 	const end = limit === undefined ? Infinity : offset + limit;
 
-	const rl = readline.createInterface({ input: createReadStream(file, { encoding: 'utf-8' }), crlfDelay: Infinity });
+	const rl = readline.createInterface({
+		input: createReadStream(dataPath(chatId, queryId), { encoding: 'utf-8' }),
+		crlfDelay: Infinity,
+	});
 	try {
 		for await (const line of rl) {
 			if (!line) {
-				continue;
-			}
-			if (index === -1) {
-				columns = (JSON.parse(line) as QueryResultMeta).columns;
-				index = 0;
 				continue;
 			}
 			if (index >= offset && index < end) {
@@ -106,25 +124,25 @@ export async function readPage(
 		rl.close();
 	}
 
-	return { columns, data: rows };
+	return { columns: meta.columns, data: rows };
 }
 
 /** Streams the full result as CSV lines (header first), one yielded chunk per row. */
 export async function* csvLines(chatId: string, queryId: string): AsyncGenerator<string> {
-	const file = filePath(chatId, queryId);
-	let columns: string[] = [];
-	let isMeta = true;
+	const meta = await getMeta(chatId, queryId);
+	if (!meta) {
+		return;
+	}
+	const { columns } = meta;
+	yield `${columns.map(escapeCsvCell).join(',')}\r\n`;
 
-	const rl = readline.createInterface({ input: createReadStream(file, { encoding: 'utf-8' }), crlfDelay: Infinity });
+	const rl = readline.createInterface({
+		input: createReadStream(dataPath(chatId, queryId), { encoding: 'utf-8' }),
+		crlfDelay: Infinity,
+	});
 	try {
 		for await (const line of rl) {
 			if (!line) {
-				continue;
-			}
-			if (isMeta) {
-				columns = (JSON.parse(line) as QueryResultMeta).columns;
-				isMeta = false;
-				yield `${columns.map(escapeCsvCell).join(',')}\r\n`;
 				continue;
 			}
 			const row = JSON.parse(line) as Record<string, unknown>;
@@ -211,25 +229,4 @@ function writeLine(stream: ReturnType<typeof createWriteStream>, line: string): 
 			resolve();
 		});
 	});
-}
-
-async function readFirstLine(file: string): Promise<string | null> {
-	let stream: ReturnType<typeof createReadStream> | null = null;
-	try {
-		stream = createReadStream(file, { encoding: 'utf-8' });
-	} catch {
-		return null;
-	}
-
-	const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
-	try {
-		for await (const line of rl) {
-			return line;
-		}
-		return null;
-	} catch {
-		return null;
-	} finally {
-		rl.close();
-	}
 }
