@@ -9,6 +9,7 @@ import { InferUIMessageChunk, readUIMessageStream } from 'ai';
 import { Card, Chat, Message, SentMessage, Thread } from 'chat';
 
 import { generateChartImage } from '../components/generate-chart';
+import { env } from '../env';
 import * as chartImageQueries from '../queries/chart-image';
 import * as chatQueries from '../queries/chat.queries';
 import * as feedbackQueries from '../queries/feedback.queries';
@@ -288,13 +289,14 @@ class ProjectSlackBot {
 				email,
 				name: displayName,
 				projectId: this.projectId,
+				role: env.DEFAULT_USER_ROLE,
 				buildEmail: (user, temporaryPassword) =>
 					buildUserAddedEmail(user, projectName, 'project', temporaryPassword),
 			});
-			return;
+		} else {
+			await this._resolveExistingUser(ctx, email);
 		}
 
-		await this._resolveExistingUser(ctx, email);
 		await this._checkUserBelongsToProject(ctx);
 	}
 
@@ -325,7 +327,7 @@ class ProjectSlackBot {
 		const role = await projectQueries.getUserRoleInProject(this.projectId, ctx.user!.id);
 		if (role !== 'admin' && role !== 'user') {
 			await ctx.thread.post(
-				"❌ You don't have permission to use nao in this project. Please contact an administrator.",
+				'❌ Your nao account is set up, but you don’t have access to this project yet. Please ask an administrator to grant you access.',
 			);
 			throw new Error('User does not have permission to access this project');
 		}

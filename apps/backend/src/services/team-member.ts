@@ -72,6 +72,7 @@ interface EnsureMessagingProviderUserOptions {
 	name: string;
 	projectId: string;
 	buildEmail: (user: { name: string; email: string }, temporaryPassword?: string) => CreatedEmail;
+	role: 'admin' | 'user' | 'viewer';
 }
 
 /**
@@ -86,6 +87,7 @@ export async function ensureMessagingProviderUser({
 	name,
 	projectId,
 	buildEmail,
+	role,
 }: EnsureMessagingProviderUserOptions): Promise<User> {
 	const normalizedEmail = email.toLowerCase();
 	const existingUser = await userQueries.getUser({ email: normalizedEmail });
@@ -95,7 +97,7 @@ export async function ensureMessagingProviderUser({
 
 	const projectMember = await projectQueries.getProjectMember(projectId, user.id);
 	if (!projectMember) {
-		await projectQueries.addProjectMember({ projectId, userId: user.id, role: 'user' });
+		await projectQueries.addProjectMember({ projectId, userId: user.id, role });
 	}
 
 	const alreadyHadAccess = !!existingUser && !!projectMember;
