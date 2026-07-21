@@ -647,7 +647,11 @@ class ProjectSlackBot {
 	}
 
 	private _updateTextBlock(text: string, ctx: ConversationContext): void {
-		const block = createTextBlock(text.replace(CITATION_TAG_REGEX, ''));
+		const cleaned = text.replace(CITATION_TAG_REGEX, '');
+		if (!cleaned.trim()) {
+			return;
+		}
+		const block = createTextBlock(cleaned);
 		if (ctx.textBlockIndex === -1) {
 			ctx.textBlockIndex = ctx.blocks.length;
 			ctx.blocks.push(block);
