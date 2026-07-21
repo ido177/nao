@@ -102,7 +102,7 @@ export const createTelegramCompletionCard = (chatUrl: string, vote?: 'up' | 'dow
 
 export const createTextBlock = (text: string): CardChild => {
 	const rendered = mdToMrkdwn(text);
-	return CardText(rendered || text);
+	return CardText(rendered || text || '…');
 };
 
 export const createImageBlock = (url: string): CardChild => {
